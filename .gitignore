@@ -1,0 +1,4 @@
+.DS_Store
+*.pyc
+opkg_cache
+__pycache__
