@@ -7,8 +7,6 @@ import wpilib
 import wpilib.drive
 import wpilib.buttons
 
-import navx
-
 class MyRobot(wpilib.TimedRobot):
 
     def robotInit(self):
@@ -16,14 +14,10 @@ class MyRobot(wpilib.TimedRobot):
         This function is called upon program startup and
         should be used for any initialization code.
         """
-        self.leftf_motor = wpilib.VictorSP(0)
-        self.leftr_motor  = wpilib.VictorSP(1)
-        self.rightf_motor = wpilib.VictorSP(2)
-        self.rightr_motor = wpilib.VictorSP(3)
+        self.left_motor = wpilib.VictorSP(0)
+        self.right_motor = wpilib.VictorSP(1)
 
-        #self.drive = wpilib.drive.DifferentialDrive(self.left_motor, self.right_motor)
-        self.drive = wpilib.drive.MecanumDrive(self.leftf_motor, self.leftr_motor, self.rightf_motor, self.rightr_motor)
-        #(frontLeftMotor, rearLeftMotor, frontRightMotor, rearRightMotor)[source]
+        self.drive = wpilib.drive.DifferentialDrive(self.left_motor, self.right_motor)
         self.stick = wpilib.Joystick(0)
         #Button number 1 is the trigger - Angel and Sam, 1.15.2019
         self.trigger = wpilib.buttons.JoystickButton(self.stick, 1) 
@@ -57,15 +51,15 @@ class MyRobot(wpilib.TimedRobot):
         """This function is called periodically during autonomous."""
 
         
-        #Drive for two seconds
-        #if self.timer.get() < 2.0:
-             #self.drive.arcadeDrive(-0.5, 0)  # Drive forwards at half speed
-        #else:
-             #self.drive.arcadeDrive(0, 0)  # Stop robot
+        # Drive for two seconds
+        # if self.timer.get() < 2.0:
+        #     self.drive.arcadeDrive(-0.5, 0)  # Drive forwards at half speed
+        # else:
+        #     self.drive.arcadeDrive(0, 0)  # Stop robot
 
     def teleopPeriodic(self):
         """This function is called periodically during operator control."""
-        self.drive.driveCartesian(.5*self.stick.getX(), -.5*self.stick.getY(), .5*self.stick.getTwist())
+        self.drive.arcadeDrive(self.stick.getY(), -self.stick.getX())
         triggeron = self.trigger.get()
         buttonon2 = self.button2.get()
         buttonon3= self.button3.get()
@@ -79,9 +73,9 @@ class MyRobot(wpilib.TimedRobot):
             # if timer is still running
 
         if self.timer_running:
-            self.drive.driveCartesian(0, 0.7, 0)
+            self.drive.arcadeDrive(0, 0.7)
             if self.timer.get() - self.start_time > 2:
-                self.drive.driveCartesian(0, 0, 0)
+                self.drive.arcadeDrive(0, 0)
                 self.timer_running = False
 
         if buttonon2 is True:
