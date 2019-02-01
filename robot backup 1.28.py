@@ -10,7 +10,6 @@ import wpilib.buttons
 from networktables import NetworkTables
 
 import navx
-from navx import AHRS
 
 class MyRobot(wpilib.TimedRobot):
 
@@ -38,9 +37,6 @@ class MyRobot(wpilib.TimedRobot):
         self.light2 = wpilib.DigitalOutput(9) 
         self.shooter1= wpilib.DoubleSolenoid(0,5,4)
         self.shooter2 = wpilib.DoubleSolenoid(1,2,3)
-        self.FirePiston = wpilib.Solenoid(0, 0)
-        self.FirePiston2 = wpilib.Solenoid(0, 1)
-
 
         wpilib.CameraServer.launch()
 
@@ -60,34 +56,10 @@ class MyRobot(wpilib.TimedRobot):
         self.timer.start()
         self.showMsg = True
 
-
-        #PID stuff
-        kP = 0.03
-        kI = 0.00
-        kD = 0.00
-        kF = 0.00
-
-
-        kToleranceDegrees = 2.0
-
-        self.ahrs = AHRS.create_spi()
-        # self.ahrs = AHRS.create_i2c()
-
-        turnController = wpilib.PIDController(
-            0.03, 0.00, 0.00, 0.00, self.ahrs, output=self
-        )
-        turnController.setInputRange(-180.0, 180.0)
-        turnController.setOutputRange(-1.0, 1.0)
-        turnController.setAbsoluteTolerance(2.0)
-        turnController.setContinuous(True)
-
-        self.turnController = turnController
-        self.rotateToAngleRate = 0
-
     def disabledPeriodic(self):
         self.test = True
 
-        print(self.navx.getAngle()) 
+        print(self.navx.getAngle())
 
         # try:
         #     if self.timer.hasPeriodPassed(0.5):
@@ -126,59 +98,23 @@ class MyRobot(wpilib.TimedRobot):
     def teleopPeriodic(self):
         """This function is called periodically during operator control."""
 
-        rotateToAngle = False
-        if self.stick.getRawButton(1):
-            self.ahrs.reset()
+        print('test periodic')
 
-        if self.stick.getRawButton(2):
-            self.turnController.setSetpoint(0.0)
-            print('button2')
-            rotateToAngle = True
-        elif self.stick.getRawButton(3):
-            self.turnController.setSetpoint(90.0)
-            rotateToAngle = True
-        elif self.stick.getRawButton(4):
-            self.turnController.setSetpoint(179.9)
-            rotateToAngle = True
-        elif self.stick.getRawButton(5):
-            self.turnController.setSetpoint(-90.0)
-            rotateToAngle = True
-
-        if rotateToAngle:
-            self.turnController.enable()
-            currentRotationRate = self.rotateToAngleRate
-        else:
-            self.turnController.disable()
-            currentRotationRate = self.stick.getTwist()
-
-
-        yaw0 = self.navx.getAngle()
         self.drive.driveCartesian(-.5*self.stick.getX(), .5*self.stick.getY(), -.5*self.stick.getTwist())
         triggeron = self.trigger.get()
         buttonon2 = self.button2.get()
-        # buttonon3= self.button3.get()
-
-        print('Joysticks twist angle =', self.stick.getTwist())
-        print('yaw angle = ', self.navx.getAngle())
-
-
-        if abs(self.stick.getTwist()) < 2:
-            if self.navx.getAngle()-yaw0 > 5:
-                self.drive.driveCartesian(0,0,-.05)
-
-
-
-
+        buttonon3= self.button3.get()
+        
 
         
         if self.showMsg:
             print('it works!!!!!!')
             self.showMsg = False
 
-        # if buttonon3 is True:
-            # if not self.timer_running:
-                # self.start_time = self.timer.get()
-                # self.timer_running = True
+        if buttonon3 is True:
+            if not self.timer_running:
+                self.start_time = self.timer.get()
+                self.timer_running = True
 
             # if timer is still running
 
@@ -201,17 +137,6 @@ class MyRobot(wpilib.TimedRobot):
         #     self.pull()
         #     # self.light.set(1)
 
-        if triggeron is True:
-            self.FirePiston.set(True)
-
-        if triggeron is False:
-            self.FirePiston.set(False)
-
-        if buttonon2 is True:
-            self.FirePiston2.set(True)
-
-        if buttonon2 is False:
-            self.FirePiston2.set(False)
             
 
             
@@ -226,13 +151,6 @@ class MyRobot(wpilib.TimedRobot):
     def turnoff(self):
         self.shooter1.set(wpilib.DoubleSolenoid.Value.kOff)
         self.shooter2.set(wpilib.DoubleSolenoid.Value.kOff)
-
-
-    def pidWrite(self, output):
-        """This function is invoked periodically by the PID Controller,
-        based upon navX MXP yaw angle input and PID Coefficients.
-        """
-        self.rotateToAngleRate = output
 
 if __name__ == "__main__":
     wpilib.run(MyRobot)

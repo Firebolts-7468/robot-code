@@ -2,3 +2,4 @@
 *.pyc
 opkg_cache
 __pycache__
+pip_cache
