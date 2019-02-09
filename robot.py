@@ -12,6 +12,8 @@ from networktables import NetworkTables
 import navx
 from navx import AHRS
 
+from camera import Camera
+
 class MyRobot(wpilib.TimedRobot):
 
     #    PID stuff
@@ -77,6 +79,8 @@ class MyRobot(wpilib.TimedRobot):
         self.timer_running = False
         self.start_time = 0
 
+        self.camera = Camera()
+
         self.timer.start()
         self.showMsg = True
 
@@ -93,6 +97,7 @@ class MyRobot(wpilib.TimedRobot):
 
         self.turnController = turnController
         self.rotateToAngleRate = 0
+        self.rotateToAngle = False
 
 
  
@@ -121,6 +126,8 @@ class MyRobot(wpilib.TimedRobot):
         print('navx yaw angle = ', self.navx.getYaw())
         print('ahrs getAngle angle = ', self.ahrs.getAngle())
         print('ahrs yaw angle = ', self.ahrs.getYaw())
+
+        self.camera.poll()
 
         # try:
         #     if self.timer.hasPeriodPassed(0.5):
