@@ -14,15 +14,6 @@ from navx import AHRS
 
 class MyRobot(wpilib.TimedRobot):
 
-    #    PID stuff
-    kP = 0.03
-    kI = 0.00
-    kD = 0.00
-    kF = 0.00
-    kToleranceDegrees = 2.0
-
-
-
     def robotInit(self):
         """
         This function is called upon program startup and
@@ -42,18 +33,11 @@ class MyRobot(wpilib.TimedRobot):
         self.button2 = wpilib.buttons.JoystickButton(self.stick, 2)
 
         # button for rotating to the next cardinal angle (0, 90, 180...)
-        # self.button3 = wpilib.buttons.JoystickButton(self.stick, 3)
+        self.button3 = wpilib.buttons.JoystickButton(self.stick, 3)
 
         #buttons for toggling rotation and translation 
         self.button11 = wpilib.buttons.JoystickButton(self.stick, 11)
         self.button12 = wpilib.buttons.JoystickButton(self.stick, 12)
-
-        # for rotate to angle
-        self.button3 = wpilib.buttons.JoystickButton(self.stick, 3)
-        self.button4 = wpilib.buttons.JoystickButton(self.stick, 4)
-        self.button5 = wpilib.buttons.JoystickButton(self.stick, 5)
-        self.button6 = wpilib.buttons.JoystickButton(self.stick, 6)
-
 
         self.timer = wpilib.Timer()
         # self.light = wpilib.DigitalOutput(0) 
@@ -73,6 +57,11 @@ class MyRobot(wpilib.TimedRobot):
 
         self.navx = navx.AHRS.create_spi()
 
+        # self.light.free()       
+
+        # self.drive.arcadeDrive(-0.5, -0.5)  # Drive forwards at half speed
+
+        # timer variables
 
         self.timer_running = False
         self.start_time = 0
@@ -80,23 +69,15 @@ class MyRobot(wpilib.TimedRobot):
         self.timer.start()
         self.showMsg = True
 
-        self.ahrs = AHRS.create_spi()
-        # self.ahrs = AHRS.create_i2c()
 
-        turnController = wpilib.PIDController(
-            self.kP, self.kI, self.kD, self.kF, self.ahrs, output=self
-        )
-        turnController.setInputRange(-180.0, 180.0)
-        turnController.setOutputRange(-1.0, 1.0)
-        turnController.setAbsoluteTolerance(self.kToleranceDegrees)
-        turnController.setContinuous(True)
-
-        self.turnController = turnController
-        self.rotateToAngleRate = 0
+        # #PID stuff
+        # kP = 0.03
+        # kI = 0.00
+        # kD = 0.00
+        # kF = 0.00
 
 
- 
-        
+        # kToleranceDegrees = 2.0
 
         # self.ahrs = AHRS.create_spi()
         # self.ahrs = AHRS.create_i2c()
@@ -114,13 +95,9 @@ class MyRobot(wpilib.TimedRobot):
 
     def disabledPeriodic(self):
         self.test = True
- 
-        # print('we are disabled right now') 
 
-        print('navx getAngle angle = ', self.navx.getAngle())
-        print('navx yaw angle = ', self.navx.getYaw())
-        print('ahrs getAngle angle = ', self.ahrs.getAngle())
-        print('ahrs yaw angle = ', self.ahrs.getYaw())
+        # print('we are disabled right now')
+        # print(self.navx.getAngle()) 
 
         # try:
         #     if self.timer.hasPeriodPassed(0.5):
@@ -172,65 +149,66 @@ class MyRobot(wpilib.TimedRobot):
                 self.drive.driveCartesian(-.5*self.stick.getX(), .5*self.stick.getY(), -.5*self.stick.getTwist())
 
 
+        #2.6.2019 THIS IS UNFINISHED 
+        # rotate to the nearest 180 degree mark
+        currentAngle = self.navx.getAngle()
+        if self.button3.get() is True:
+            anglediff = currentAngle % 180 # rotate to nearest 90
+            print(anglediff)
+            if anglediff >= 5 and anglediff<=-5:
+                self.drive.driveCartesian(0,0, .5)
 
-
-
-        tm = wpilib.Timer()
-        tm.start()
- 
-
-        # self.myRobot.setSafetyEnabled(True) 
-        # while self.isOperatorControl() and self.isEnabled():
-
-            # if tm.hasPeriodPassed(1.0):
-        # print("NavX Gyro", self.ahrs.getYaw(), self.ahrs.getAngle()) 
-
-        if self.button5.get() is True: 
-            self.ahrs.reset()
-
-        if self.button4.get() is True: 
-            self.turnController.setSetpoint(30.0)
-            self.rotateToAngle = True
-        # elif self.stick.getRawButton(5):
-        #     self.turnController.setSetpoint(179.9)
-        #     rotateToAngle = True
-        # elif self.stick.getRawButton(6):
-        #     self.turnController.setSetpoint(-90.0)
-        #     rotateToAngle = True
-
-        if self.rotateToAngle:
-            self.turnController.enable()
-            print(self.ahrs.getYaw())
-            currentRotationRate = self.rotateToAngleRate
-            self.drive.driveCartesian(0,0,currentRotationRate)
-        else:
-            self.turnController.disable()
-            currentRotationRate = self.stick.getTwist()
-            # print("NOT rotating to angle" + self.ahrs.getYaw())
-
-        if currentRotationRate < .01:
-            self.rotateToAngle = False 
-
-
-        # #2.6.2019 THIS IS UNFINISHED 
-        # # rotate to the nearest 180 degree mark
-        # currentAngle = self.navx.getAngle()
-        # if self.button3.get() is True:
-        #     anglediff = currentAngle % 180 # rotate to nearest 90
-        #     print(anglediff)
-        #     if anglediff >= 5 and anglediff<=-5:
-        #         self.drive.driveCartesian(0,0, .5)
- 
-
-        # 
-        print('navx getAngle angle = ', self.navx.getAngle())
-        print('navx yaw angle = ', self.navx.getYaw())
-        print('ahrs getAngle angle = ', self.ahrs.getAngle())
-        print('ahrs yaw angle = ', self.ahrs.getYaw())
 
 
         triggeron = self.trigger.get()
         buttonon2 = self.button2.get()
+
+        
+
+
+
+
+        # rotateToAngle = False
+        # if self.stick.getRawButton(1):
+        #     self.ahrs.reset()
+
+        # if self.stick.getRawButton(2):
+        #     self.turnController.setSetpoint(0.0)
+        #     print('button2')
+        #     rotateToAngle = True
+        # elif self.stick.getRawButton(3):
+        #     self.turnController.setSetpoint(90.0)
+        #     rotateToAngle = True
+        # elif self.stick.getRawButton(4):
+        #     self.turnController.setSetpoint(179.9)
+        #     rotateToAngle = True
+        # elif self.stick.getRawButton(5):
+        #     self.turnController.setSetpoint(-90.0)
+        #     rotateToAngle = True
+
+        # if rotateToAngle:
+        #     self.turnController.enable()
+        #     currentRotationRate = self.rotateToAngleRate
+        # else:
+        #     self.turnController.disable()
+        #     currentRotationRate = self.stick.getTwist()
+
+
+        # yaw0 = self.navx.getAngle()
+
+        # buttonon3= self.button3.get()
+
+        # 
+        # print('yaw angle = ', self.navx.getAngle())
+
+
+        # if abs(self.stick.getTwist()) < 2:
+        #     if self.navx.getAngle()-yaw0 > 5:
+        #         self.drive.driveCartesian(0,0,-.05)
+
+
+
+
 
         
         if self.showMsg:
@@ -252,8 +230,6 @@ class MyRobot(wpilib.TimedRobot):
         if buttonon2 is False:
             # print("firepiston2 False")
             self.FirePiston2.set(False)
-
-            pass
             
 
             
