@@ -73,7 +73,7 @@ class MyRobot(wpilib.TimedRobot):
 
         NetworkTables.initialize(server='10.74.68.2')
 
-        self.navx = navx.AHRS.create_spi()
+        # self.navx = navx.AHRS.create_spi()
 
 
         self.timer_running = False
@@ -122,10 +122,10 @@ class MyRobot(wpilib.TimedRobot):
  
         # print('we are disabled right now') 
 
-        print('navx getAngle angle = ', self.navx.getAngle())
-        print('navx yaw angle = ', self.navx.getYaw())
-        print('ahrs getAngle angle = ', self.ahrs.getAngle())
-        print('ahrs yaw angle = ', self.ahrs.getYaw())
+        # print('navx getAngle angle = ', self.navx.getAngle())
+        # print('navx yaw angle = ', self.navx.getYaw())
+        # print('ahrs getAngle angle = ', self.ahrs.getAngle())
+        # print('ahrs yaw angle = ', self.ahrs.getYaw())
 
         self.camera.poll()
 
@@ -207,7 +207,7 @@ class MyRobot(wpilib.TimedRobot):
 
         if self.rotateToAngle:
             self.turnController.enable()
-            print(self.ahrs.getYaw())
+            # print(self.ahrs.getYaw())
             currentRotationRate = self.rotateToAngleRate
             self.drive.driveCartesian(0,0,currentRotationRate)
         else:
@@ -230,10 +230,10 @@ class MyRobot(wpilib.TimedRobot):
  
 
         # 
-        print('navx getAngle angle = ', self.navx.getAngle())
-        print('navx yaw angle = ', self.navx.getYaw())
-        print('ahrs getAngle angle = ', self.ahrs.getAngle())
-        print('ahrs yaw angle = ', self.ahrs.getYaw())
+        # print('navx getAngle angle = ', self.navx.getAngle())
+        # print('navx yaw angle = ', self.navx.getYaw())
+        # print('ahrs getAngle angle = ', self.ahrs.getAngle())
+        # print('ahrs yaw angle = ', self.ahrs.getYaw())
 
 
         triggeron = self.trigger.get()
