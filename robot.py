@@ -24,8 +24,7 @@ class Rotation_Source(wpilib.interfaces.PIDSource):
         if self.ahrs.isMagnetometerCalibrated():
             return (self.ahrs.getFusedHeading()-self.angleOffset)%360
         else:
-            print('navX is not calibrated')
-            return 0
+            return self.ahrs.getAngle()%360
 
     def getPIDSourceType(self):
         return 'fused heading'
@@ -52,6 +51,7 @@ class MyRobot(wpilib.TimedRobot):
         This function is called upon program startup and
         should be used for any initialization code.
         """ 
+        self.loopCounter = 0
 
         # Set up the network tables so we can talk to the driver station
         NetworkTables.initialize(server='10.74.68.2')
@@ -136,7 +136,7 @@ class MyRobot(wpilib.TimedRobot):
 
         # Define all the variables for controlling rotation
         self.rotation_PID_vars = {
-            'kP': 0.03,
+            'kP': 0.06,
             'kI': 0.00,
             'kD': 0.00,
             'kF': 0.00,
@@ -192,8 +192,10 @@ class MyRobot(wpilib.TimedRobot):
     def disabledPeriodic(self):
         #this looks for data from the camera
         self.visionCamera.poll()
+        self.loopCounter += 1
 
-        print("Heading: "+self.rotation_source.pidGet())
+        if self.loopCounter%100==0:
+            print("Heading: "+str(self.rotation_source.pidGet()))
 
 
     def autonomousInit(self):
@@ -207,7 +209,7 @@ class MyRobot(wpilib.TimedRobot):
 
     def teleopPeriodic(self):
         """This function is called periodically during operator control."""
-
+        self.loopCounter += 1
         #first, let's get all the data from the joystick so we know what we are working with
         stick = {
             'x': -.5*self.joystick.getX(),
@@ -274,12 +276,14 @@ class MyRobot(wpilib.TimedRobot):
                 #this is the first time, so we need to set where to snap to
                 angleError = 360 #start with a big error
                 currentAngle = self.rotation_source.pidGet() #get the angle the same way the PID control will
+                print('Starting angle: %s' %currentAngle)
                 #for any angle that has a smaller error, set the setpoint to it
                 for name,angle in self.target_angles.items():
-                    if abs((currentAngle-angle)%360) < angleError:
-                        print('Setting angle to '+str(angle)+' for '+name)
-                        angleError = abs((currentAngle-angle)%360)
-                        self.rotation_PID.setSetpoint(angle)
+                    angle_difference = 180 - abs(abs(currentAngle - angle) - 180)
+                    if angle_difference < angleError:
+                        print('Setting angle to %s for %s with diff: %s' % (name,angle,angle_difference))
+                        angleError = angle_difference
+                        self.rotation_PID.setSetpoint((angle+180)%360)
                 self.rotation_PID.enable()
                 self.snappingToAngle = True
             else:    
