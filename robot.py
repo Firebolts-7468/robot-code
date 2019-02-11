@@ -15,7 +15,7 @@ from navx import AHRS
 from visionCamera import VisionCamera
 
 
-class Rotation_Source(wpilib.PIDSource):
+class Rotation_Source(wpilib.interfaces.PIDSource):
     def __init__(self, ahrs, angleOffset = 0):
         self.ahrs = ahrs
         self.angleOffset = angleOffset
@@ -27,8 +27,13 @@ class Rotation_Source(wpilib.PIDSource):
             print('navX is not calibrated')
             return 0
 
+    def getPIDSourceType(self):
+        return 'fused heading'
+    
+    def setPIDSourceType(self, source_type):
+        return True
 
-class PID_Output(wpilib.PIDOutput):
+class PID_Output(wpilib.interfaces.PIDOutput):
     def __init__(self):
         self.correction = 0;
 
@@ -95,9 +100,9 @@ class MyRobot(wpilib.TimedRobot):
         # button4 for controlling the robot to be lined up with the target in crosstrack
         self.control_crosstrack_button = wpilib.buttons.JoystickButton(self.joystick, 4)
         #button 11 is to only translate 
-        self.translate_only_button = wpilib.buttons.JoystickButton(self.joystick, 11)
+        self.translate_only_button = wpilib.buttons.JoystickButton(self.joystick, 5)
         #button 12 is to only rotate
-        self.rotate_only_button = wpilib.buttons.JoystickButton(self.joystick, 12)
+        self.rotate_only_button = wpilib.buttons.JoystickButton(self.joystick, 6)
 
         #if we want to use the throttle we should set it up here
         self.useThrottle = False
@@ -152,7 +157,7 @@ class MyRobot(wpilib.TimedRobot):
         self.rotation_PID.setInputRange(0, 360)
         self.rotation_PID.setContinuous(True)
         self.rotation_PID.setOutputRange(-self.rotation_PID_vars['max'], self.rotation_PID_vars['max'])
-        self.rotation_PID.setAbsoluteTolerance(self.kToleranceDegrees)
+        self.rotation_PID.setAbsoluteTolerance(self.rotation_PID_vars['kToleranceDegrees'])
 
 
 
@@ -179,7 +184,7 @@ class MyRobot(wpilib.TimedRobot):
         # #then, we set some parameters
         # self.crosstrack_PID.setInputRange(-400, 400)
         # self.crosstrack_PID.setOutputRange(-self.crosstrack_PID_vars['max'], self.crosstrack_PID_vars['max'])
-        # self.crosstrack_PID.setAbsoluteTolerance(self.kTolerance)
+        # self.crosstrack_PID.setAbsoluteTolerance(self.rotation_PID_vars['kTolerance'])
         
    
     def disabledPeriodic(self):
@@ -188,8 +193,8 @@ class MyRobot(wpilib.TimedRobot):
 
     def autonomousInit(self):
         """This function is run once each time the robot enters autonomous mode."""
-        self.timer.reset()
-        self.timer.start()
+        #self.timer.reset()
+        #self.timer.start()
 
     def autonomousPeriodic(self):
         """This function is called periodically during autonomous."""
@@ -212,7 +217,7 @@ class MyRobot(wpilib.TimedRobot):
             'control_crosstrack_button': self.control_crosstrack_button.get(),
         }
 
-        print stick
+        #print(stick)
 
         #if we are going to use the throttle input, we should do that first
         if self.useThrottle:
@@ -242,7 +247,7 @@ class MyRobot(wpilib.TimedRobot):
                 angleError = 360 #start with a big error
                 currentAngle = self.rotation_source.pidGet() #get the angle the same way the PID control will
                 #for any angle that has a smaller error, set the setpoint to it
-                for name,angle in self.target_angles:
+                for name,angle in self.target_angles.items():
                     if abs((currentAngle-angle)%360) < angleError:
                         print('Setting angle to '+str(angle)+' for '+name)
                         angleError = abs((currentAngle-angle)%360)
@@ -266,7 +271,9 @@ class MyRobot(wpilib.TimedRobot):
         #now that we have figured everything out, we need to a actually drive the robot        
         self.drive.driveCartesian(stick['x'], stick['y'], stick['rot'])
 
+    
+
 
 if __name__ == "__main__":
-    wpilib.run(MyRobot)
+    wpilib.run(MyRobot, physics_enabled=True)
 

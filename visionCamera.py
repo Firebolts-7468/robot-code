@@ -1,7 +1,7 @@
 import wpilib
 import struct
 
-class VisionCamera(wpilib.PIDSource):
+class VisionCamera(wpilib.interfaces.PIDSource):
     def __init__(self, addr=4):
         self.i2c = wpilib.I2C(wpilib.I2C.Port.kOnboard, addr)
 
@@ -21,7 +21,7 @@ class VisionCamera(wpilib.PIDSource):
         except:
             self.data = -9000
 
-        print('got data: %i' % self.data)
+        #print('got data: %i' % self.data)
 
     def pidGet(self):
         if len(self.data)>0:
