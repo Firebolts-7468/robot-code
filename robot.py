@@ -33,6 +33,8 @@ class Rotation_Source(wpilib.interfaces.PIDSource):
     def setPIDSourceType(self, source_type):
         return True
 
+
+
 class PID_Output(wpilib.interfaces.PIDOutput):
     def __init__(self):
         self.correction = 0;
@@ -191,6 +193,9 @@ class MyRobot(wpilib.TimedRobot):
         #this looks for data from the camera
         self.visionCamera.poll()
 
+        print("Heading: "+self.rotation_source.pidGet())
+
+
     def autonomousInit(self):
         """This function is run once each time the robot enters autonomous mode."""
         #self.timer.reset()
@@ -216,6 +221,29 @@ class MyRobot(wpilib.TimedRobot):
             'rotate_only_button': self.rotate_only_button.get(),
             'control_crosstrack_button': self.control_crosstrack_button.get(),
         }
+
+
+
+        # ##TESTING!!##
+        # #lets see if we can control to a direction
+        # stick['x'] = 0
+        # stick['y'] = 0
+        # stick['rot'] = 0
+
+        # if first time:
+        #     currentAngle = self.rotation_source.pidGet()
+        #     newAngle = currentAngle +30
+        #     self.rotation_PID.setSetpoint(newAngle)
+        #     self.rotation_PID.enable()
+        # else:
+        #     stick['rot'] = self.rotation_output.correction
+
+
+        # #make this work, by tuning the PID parameters in rotation_PID_vars using this process
+        # # https://frc-pdr.readthedocs.io/en/latest/control/pid_control.html#tuning-methods
+
+
+
 
         #print(stick)
 
@@ -267,13 +295,30 @@ class MyRobot(wpilib.TimedRobot):
         # if stick['control_crosstrack_button']:  
         #     stick['x'] = self.crosstrack_output.correction
 
-
         #now that we have figured everything out, we need to a actually drive the robot        
         self.drive.driveCartesian(stick['x'], stick['y'], stick['rot'])
 
     
-
-
 if __name__ == "__main__":
     wpilib.run(MyRobot, physics_enabled=True)
+
+
+
+# Links for PID
+# https://www.chiefdelphi.com/t/python-drivetrain-pid/161488/2
+# https://frc-pdr.readthedocs.io/en/latest/control/pid_control.html#tuning-methods
+# https://robotpy.readthedocs.io/projects/wpilib/en/latest/_modules/wpilib/interfaces/pidsource.html#PIDSource.getPIDSourceType
+
+
+#Steps to do with students
+  # Show that fused heading changes with robot orientation
+  # turn off all joystick entry, and set a target of 30deg off of starting, and control to it
+
+
+
+
+
+
+
+
 
