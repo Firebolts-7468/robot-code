@@ -8,43 +8,19 @@ import wpilib.drive
 import wpilib.buttons
 
 from networktables import NetworkTables
+from networktables.util import ntproperty
 
 import navx
 from navx import AHRS
 
-from visionCamera import VisionCamera
+from helpers import Rotation_Source, PID_Output, VisionCamera
 
-
-class Rotation_Source(wpilib.interfaces.PIDSource):
-    def __init__(self, ahrs, angleOffset = 0):
-        self.ahrs = ahrs
-        self.angleOffset = angleOffset
-
-    def pidGet(self):
-        if self.ahrs.isMagnetometerCalibrated():
-            return (self.ahrs.getFusedHeading()-self.angleOffset)%360
-        else:
-            return self.ahrs.getAngle()%360
-
-    def getPIDSourceType(self):
-        return 'fused heading'
-    
-    def setPIDSourceType(self, source_type):
-        return True
-
-
-
-class PID_Output(wpilib.interfaces.PIDOutput):
-    def __init__(self):
-        self.correction = 0;
-
-    def pidWrite(self, value):
-        self.correction = value
-
-   
 
 class MyRobot(wpilib.TimedRobot):
 
+
+    target = ntproperty("/camera/target", (0, 0.0, 0.0)) #found, angle and distance
+    
 
     def robotInit(self):
         """
@@ -107,8 +83,9 @@ class MyRobot(wpilib.TimedRobot):
         self.rotate_only_button = wpilib.buttons.JoystickButton(self.joystick, 6)
 
         #if we want to use the throttle we should set it up here
-        self.useThrottle = False
-        self.throttleMax = 1
+        self.useThrottle = True
+        self.triggerpushed = 0
+        self.triggerreleased = 1 
 
 
         #starting the timer, but I don't know why
@@ -133,6 +110,7 @@ class MyRobot(wpilib.TimedRobot):
 
         #We should define some variables for snapping to the closest target angle
         self.snappingToAngle = False
+        self.controllingCrosstrack = False
 
         # Define all the variables for controlling rotation
         self.rotation_PID_vars = {
@@ -163,30 +141,30 @@ class MyRobot(wpilib.TimedRobot):
 
 
 
-        # # Define all the variables for controlling crosstrack
-        # self.crosstrack_PID_vars = {
-        #     'kP': 0.03,
-        #     'kI': 0.00,
-        #     'kD': 0.00,
-        #     'kF': 0.00,
-        #     'max': .2,
-        #     'kTolerance' : 2.0,
-        # }
-        # #first, we need to instantiate our objects up above
-        # self.crosstrack_output = PID_Output()
-        # #then, we make the PID object
-        # self.crosstrack_PID = wpilib.PIDController(
-        #     self.crosstrack_PID_vars['kP'], 
-        #     self.crosstrack_PID_vars['kI'], 
-        #     self.crosstrack_PID_vars['kD'], 
-        #     self.crosstrack_PID_vars['kF'], 
-        #     self.visionCamera, 
-        #     self.crosstrack_output
-        # )
-        # #then, we set some parameters
-        # self.crosstrack_PID.setInputRange(-400, 400)
-        # self.crosstrack_PID.setOutputRange(-self.crosstrack_PID_vars['max'], self.crosstrack_PID_vars['max'])
-        # self.crosstrack_PID.setAbsoluteTolerance(self.rotation_PID_vars['kTolerance'])
+        # Define all the variables for controlling crosstrack
+        self.crosstrack_PID_vars = {
+            'kP': 0.03,
+            'kI': 0.00,
+            'kD': 0.00,
+            'kF': 0.00,
+            'max': .2,
+            'kTolerance' : 2.0,
+        }
+        #first, we need to instantiate our objects up above
+        self.crosstrack_output = PID_Output()
+        #then, we make the PID object
+        self.crosstrack_PID = wpilib.PIDController(
+            self.crosstrack_PID_vars['kP'], 
+            self.crosstrack_PID_vars['kI'], 
+            self.crosstrack_PID_vars['kD'], 
+            self.crosstrack_PID_vars['kF'], 
+            self.visionCamera, 
+            self.crosstrack_output
+        )
+        #then, we set some parameters
+        self.crosstrack_PID.setInputRange(-100, 100)
+        self.crosstrack_PID.setOutputRange(-self.crosstrack_PID_vars['max'], self.crosstrack_PID_vars['max'])
+        self.crosstrack_PID.setAbsoluteTolerance(self.crosstrack_PID_vars['kTolerance'])
         
    
     def disabledPeriodic(self):
@@ -212,10 +190,10 @@ class MyRobot(wpilib.TimedRobot):
         self.loopCounter += 1
         #first, let's get all the data from the joystick so we know what we are working with
         stick = {
-            'x': -.5*self.joystick.getX(),
-            'y': .5*self.joystick.getY(),
-            'rot': -.4*self.joystick.getTwist(),
-            'throttle': self.joystick.getThrottle(),
+            'x': -self.joystick.getX(),
+            'y': self.joystick.getY(),
+            'rot': -.8*self.joystick.getTwist(),
+            'throttle': (self.joystick.getThrottle()+1)/2,
             'trigger_button': self.trigger_button.get(),
             'thumb_button': self.thumb_button.get(),
             'snap_angle_button': self.snap_angle_button.get(),
@@ -224,26 +202,8 @@ class MyRobot(wpilib.TimedRobot):
             'control_crosstrack_button': self.control_crosstrack_button.get(),
         }
 
-
-
-        # ##TESTING!!##
-        # #lets see if we can control to a direction
-        # stick['x'] = 0
-        # stick['y'] = 0
-        # stick['rot'] = 0
-
-        # if first time:
-        #     currentAngle = self.rotation_source.pidGet()
-        #     newAngle = currentAngle +30
-        #     self.rotation_PID.setSetpoint(newAngle)
-        #     self.rotation_PID.enable()
-        # else:
-        #     stick['rot'] = self.rotation_output.correction
-
-
-        # #make this work, by tuning the PID parameters in rotation_PID_vars using this process
-        # # https://frc-pdr.readthedocs.io/en/latest/control/pid_control.html#tuning-methods
-
+        if self.loopCounter%30==0 and self.target[0]>0:
+            print('See target at %s'%(self.target[2]))
 
 
 
@@ -251,9 +211,9 @@ class MyRobot(wpilib.TimedRobot):
 
         #if we are going to use the throttle input, we should do that first
         if self.useThrottle:
-            stick['x'] = stick['x']*stick['throttle']/self.throttleMax
-            stick['y'] = stick['y']*stick['throttle']/self.throttleMax
-            stick['rot'] = stick['rot']*stick['throttle']/self.throttleMax
+            stick['x'] = stick['x']*stick['throttle']
+            stick['y'] = stick['y']*stick['throttle']
+            stick['rot'] = stick['rot']*stick['throttle']
 
 
         #so, if we want to translate only, we need to zero out the input for twitsting
@@ -265,8 +225,25 @@ class MyRobot(wpilib.TimedRobot):
             stick['y'] = 0
 
         #set the solenoids based on the button
-        self.panel_eject_solenoid.set(stick['trigger_button'])
-        self.panel_retract_solenoid.set(stick['thumb_button'])
+        if stick['trigger_button']:
+            if self.triggerpushed == 0 and self.triggerreleased == 1: 
+                self.panel_eject_solenoid.set(True) 
+                self.panel_retract_solenoid.set(False)
+                self.triggerpushed = 1 
+                self.triggerreleased = 0 
+            if self.triggerpushed == 1 and self.triggerreleased == 1: 
+                self.panel_eject_solenoid.set(False) 
+                self.panel_retract_solenoid.set(True)
+                self.triggerpushed = 0
+                self.triggerreleased = 0
+        else:
+            self.triggerreleased = 1
+            self.panel_eject_solenoid.set(False) 
+            self.panel_retract_solenoid.set(False)
+
+
+        #self.panel_eject_solenoid.set(stick['trigger_button'])
+        #self.panel_retract_solenoid.set(stick['thumb_button'])
 
        
         #In order to snap to control, we need to find the angle we are currently at, then set the target angle 
@@ -295,9 +272,16 @@ class MyRobot(wpilib.TimedRobot):
             self.rotation_PID.disable()
 
 
+
+
         #for control crosstrack, we need to take the control signal from crosstrack PID
-        # if stick['control_crosstrack_button']:  
-        #     stick['x'] = self.crosstrack_output.correction
+        if stick['control_crosstrack_button']:
+            if not self.controllingCrosstrack:
+                self.crosstrack_PID.setSetpoint(0)
+                self.crosstrack_PID.enable()  
+                self.controllingCrosstrack = True  
+            else:
+                stick['x'] = self.crosstrack_output.correction
 
         #now that we have figured everything out, we need to a actually drive the robot        
         self.drive.driveCartesian(stick['x'], stick['y'], stick['rot'])
