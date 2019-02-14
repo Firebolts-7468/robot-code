@@ -77,9 +77,11 @@ class MyRobot(wpilib.TimedRobot):
         self.snap_angle_button = wpilib.buttons.JoystickButton(self.joystick, 3)
         # button4 for controlling the robot to be lined up with the target in crosstrack
         self.control_crosstrack_button = wpilib.buttons.JoystickButton(self.joystick, 4)
-        #button 11 is to only translate 
+        #button 7 sets zero point for angle
+        self.zero_button = wpilib.buttons.JoystickButton(self.joystick, 7)
+        #button 5 is to only translate 
         self.translate_only_button = wpilib.buttons.JoystickButton(self.joystick, 5)
-        #button 12 is to only rotate
+        #button 6 is to only rotate
         self.rotate_only_button = wpilib.buttons.JoystickButton(self.joystick, 6)
 
         #if we want to use the throttle we should set it up here
@@ -98,10 +100,13 @@ class MyRobot(wpilib.TimedRobot):
         # Now, let's set up the solenoids we are going to use    
         self.panel_eject_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 0)
         self.panel_retract_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 1)
+        self.panel_new_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
+
+
         #self.climb_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
 
         #launch the camera server so that we can view the USB camera on the driver station
-        wpilib.CameraServer.launch()
+        #wpilib.CameraServer.launch()
         #now, make an object for the vision camera
         self.visionCamera = VisionCamera()
 
@@ -114,13 +119,15 @@ class MyRobot(wpilib.TimedRobot):
 
         # Define all the variables for controlling rotation
         self.rotation_PID_vars = {
-            'kP': 0.06,
-            'kI': 0.00,
-            'kD': 0.00,
+            'kP': 0.0005,
+            'kI': 0,
+            'kD': 0.02,
             'kF': 0.00,
-            'max': .2,
+            'max': 1,
             'kToleranceDegrees' : 2.0,
         }
+
+        self.lastRotation = 0
         #first, we need to instantiate our objects up above
         self.rotation_source = Rotation_Source(self.ahrs)
         self.rotation_output = PID_Output()
@@ -131,7 +138,8 @@ class MyRobot(wpilib.TimedRobot):
             self.rotation_PID_vars['kD'], 
             self.rotation_PID_vars['kF'], 
             self.rotation_source, 
-            self.rotation_output
+            self.rotation_output, 
+            
         )
         #then, we set some parameters
         self.rotation_PID.setInputRange(0, 360)
@@ -144,12 +152,13 @@ class MyRobot(wpilib.TimedRobot):
         # Define all the variables for controlling crosstrack
         self.crosstrack_PID_vars = {
             'kP': 0.03,
-            'kI': 0.00,
+            'kI': 0.0,
             'kD': 0.00,
             'kF': 0.00,
             'max': .2,
             'kTolerance' : 2.0,
         }
+
         #first, we need to instantiate our objects up above
         self.crosstrack_output = PID_Output()
         #then, we make the PID object
@@ -166,14 +175,19 @@ class MyRobot(wpilib.TimedRobot):
         self.crosstrack_PID.setOutputRange(-self.crosstrack_PID_vars['max'], self.crosstrack_PID_vars['max'])
         self.crosstrack_PID.setAbsoluteTolerance(self.crosstrack_PID_vars['kTolerance'])
         
+        #initiate the "zero out" function
+        self.zeroOnce = 0
    
     def disabledPeriodic(self):
         #this looks for data from the camera
-        self.visionCamera.poll()
+        #self.visionCamera.poll()
         self.loopCounter += 1
 
-        if self.loopCounter%100==0:
-            print("Heading: "+str(self.rotation_source.pidGet()))
+        #if self.loopCounter%10==0:
+        #    print("Heading is: "+str(self.rotation_source.pidGet()))
+
+
+
 
 
     def autonomousInit(self):
@@ -196,16 +210,31 @@ class MyRobot(wpilib.TimedRobot):
             'throttle': (self.joystick.getThrottle()+1)/2,
             'trigger_button': self.trigger_button.get(),
             'thumb_button': self.thumb_button.get(),
+            'zero_button' : self.zero_button.get(),
             'snap_angle_button': self.snap_angle_button.get(),
             'translate_only_button': self.translate_only_button.get(),
             'rotate_only_button': self.rotate_only_button.get(),
             'control_crosstrack_button': self.control_crosstrack_button.get(),
         }
 
+        #if self.loopCounter%100==0:
+        #    print('P: %s, I: %s, D:%s'%(self.rotation_PID_vars['kP'],self.rotation_PID_vars['kI'],self.rotation_PID_vars['kD']))
+
         if self.loopCounter%30==0 and self.target[0]>0:
             print('See target at %s'%(self.target[2]))
 
+        #print(self.rotation_PID_vars['kP'])
 
+        if stick['zero_button']:
+            if self.zeroOnce == 0:
+                print("Old angle offset was: " + str(self.rotation_source.angleOffset))
+                self.rotation_source.zeroAngleOffset()
+                print("New angle offset is: " + str(self.rotation_source.angleOffset))
+                print("Heading is: " + str(self.rotation_source.pidGet()))
+                self.zeroOnce = self.zeroOnce + 1
+
+        if stick['zero_button'] is False:
+            self.zeroOnce = 0
 
         #print(stick)
 
@@ -223,6 +252,8 @@ class MyRobot(wpilib.TimedRobot):
         if stick['rotate_only_button']:  
             stick['x'] = 0
             stick['y'] = 0
+            print("Position: %s"%(self.rotation_source.pidGet()))
+
 
         #set the solenoids based on the button
         if stick['trigger_button']:
@@ -243,7 +274,7 @@ class MyRobot(wpilib.TimedRobot):
 
 
         #self.panel_eject_solenoid.set(stick['trigger_button'])
-        #self.panel_retract_solenoid.set(stick['thumb_button'])
+        self.panel_new_solenoid.set(stick['thumb_button'])
 
        
         #In order to snap to control, we need to find the angle we are currently at, then set the target angle 
@@ -256,20 +287,37 @@ class MyRobot(wpilib.TimedRobot):
                 print('Starting angle: %s' %currentAngle)
                 #for any angle that has a smaller error, set the setpoint to it
                 for name,angle in self.target_angles.items():
+                    #angle_difference = 180 - abs(abs(currentAngle - angle) - 180)
                     angle_difference = 180 - abs(abs(currentAngle - angle) - 180)
                     if angle_difference < angleError:
                         print('Setting angle to %s for %s with diff: %s' % (name,angle,angle_difference))
                         angleError = angle_difference
                         self.rotation_PID.setSetpoint((angle+180)%360)
+                        #self.rotation_PID.setSetpoint(angle)
                 self.rotation_PID.enable()
                 self.snappingToAngle = True
             else:    
-                stick['rot'] = self.rotation_output.correction
+
+                if self.loopCounter%10 ==0:
+                    print("Error: %s, Position: %s, Setpoint: %s"%(self.rotation_source.pidGet()-180-self.rotation_PID.getSetpoint(),self.rotation_source.pidGet(),self.rotation_PID.getSetpoint()))
+
+                #doing a little extra here to not let it change too quickly
+                maxChange = 0.05
+                if abs(self.lastRotation-self.rotation_output.correction)>maxChange:
+                    if self.lastRotation < self.rotation_output.correction:
+                        stick['rot'] = self.lastRotation+maxChange
+                    else:
+                        stick['rot'] = self.lastRotation-maxChange
+                else:
+                    stick['rot'] = self.rotation_output.correction
+                self.lastRotation = stick['rot']
+
 
         else:
             #if we aren't snapping, we should reset this variable and turn off control
             self.snappingToAngle = False
             self.rotation_PID.disable()
+            self.lastRotation = 0
 
 
 
@@ -282,6 +330,7 @@ class MyRobot(wpilib.TimedRobot):
                 self.controllingCrosstrack = True  
             else:
                 stick['x'] = self.crosstrack_output.correction
+
 
         #now that we have figured everything out, we need to a actually drive the robot        
         self.drive.driveCartesian(stick['x'], stick['y'], stick['rot'])

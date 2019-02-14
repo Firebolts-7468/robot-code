@@ -14,9 +14,19 @@ class Rotation_Source(wpilib.interfaces.PIDSource):
 
     def pidGet(self):
         if self.ahrs.isMagnetometerCalibrated():
+            #print('fused %s'%self.ahrs.getFusedHeading())
             return (self.ahrs.getFusedHeading()-self.angleOffset)%360
         else:
-            return self.ahrs.getAngle()%360
+            print('not fused')
+            return (self.ahrs.getAngle()-self.angleOffset)%360
+
+    def zeroAngleOffset(self):
+        if self.ahrs.isMagnetometerCalibrated():
+            currentAngle = self.ahrs.getFusedHeading()
+            self.angleOffset = currentAngle
+        else:
+            currentAngle = self.ahrs.getAngle()
+            self.angleOffset = currentAngle 
 
     def getPIDSourceType(self):
         return 'fused heading'
