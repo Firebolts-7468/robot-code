@@ -52,8 +52,10 @@ class VisionCamera(wpilib.interfaces.PIDSource):
     def __init__(self, addr=4):
         self.i2c = wpilib.I2C(wpilib.I2C.Port.kOnboard, addr)
 
-        self.msg_length = 4
+        self.msg_length = 8
         self.data = []
+        self.offset = 0
+        self.distance = 0
 
 
 
@@ -62,20 +64,26 @@ class VisionCamera(wpilib.interfaces.PIDSource):
         try:
             res = self.i2c.readOnly(self.msg_length)
         except Exception as e:
+            self.data = [0,0]
             pass
-
         try:
-            self.data = struct.unpack('<i', bytearray(res))
+            self.data = struct.unpack('<ii', bytearray(res))
         except:
-            self.data = -9000
+            self.data = [0,0]
+        self.offset = self.data[0]
+        self.distance = self.data[1]    
 
         #print('got data: %i' % self.data)
 
     def pidGet(self):
-        found, offset, distance = self.target
-        #print('offset: %s, dist:%s'%( offset, distance))
 
-        return offset
+        if wpilib.RobotBase.isSimulation():
+            found, offset, distance = self.target
+            #print('offset: %s, dist:%s'%( offset, distance))
+            return offset
+        else:
+            self.poll()
+            return self.offset
         
     def getPIDSourceType(self):
         return 'crosstrack'

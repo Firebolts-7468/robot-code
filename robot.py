@@ -86,12 +86,14 @@ class MyRobot(wpilib.TimedRobot):
 
         #if we want to use the throttle we should set it up here
         self.useThrottle = True
-        self.triggerpushed = 0
-        self.triggerreleased = 1 
+        #timer so that we can retract the solenoid some time after we let go of the button
+        self.trigger_timer = wpilib.Timer()
+        self.trigger_timer.start()
+        self.solenoid_delay = 0.5 #seconds
+ 
 
-
-        #starting the timer, but I don't know why
-        #self.timer = wpilib.Timer()
+      
+        
 
         #If we want to set up digital output like LEDs, we can do it here
             # self.light = wpilib.DigitalOutput(0) 
@@ -180,7 +182,6 @@ class MyRobot(wpilib.TimedRobot):
    
     def disabledPeriodic(self):
         #this looks for data from the camera
-        #self.visionCamera.poll()
         self.loopCounter += 1
 
         #if self.loopCounter%10==0:
@@ -207,7 +208,7 @@ class MyRobot(wpilib.TimedRobot):
             'x': -self.joystick.getX(),
             'y': self.joystick.getY(),
             'rot': -.8*self.joystick.getTwist(),
-            'throttle': (self.joystick.getThrottle()+1)/2,
+            'throttle': (-self.joystick.getThrottle()+1)/2,
             'trigger_button': self.trigger_button.get(),
             'thumb_button': self.thumb_button.get(),
             'zero_button' : self.zero_button.get(),
@@ -257,20 +258,13 @@ class MyRobot(wpilib.TimedRobot):
 
         #set the solenoids based on the button
         if stick['trigger_button']:
-            if self.triggerpushed == 0 and self.triggerreleased == 1: 
-                self.panel_eject_solenoid.set(True) 
-                self.panel_retract_solenoid.set(False)
-                self.triggerpushed = 1 
-                self.triggerreleased = 0 
-            if self.triggerpushed == 1 and self.triggerreleased == 1: 
-                self.panel_eject_solenoid.set(False) 
-                self.panel_retract_solenoid.set(True)
-                self.triggerpushed = 0
-                self.triggerreleased = 0
+            #when we press the trigger, open the valve
+            self.panel_eject_solenoid.set(True)
+            self.trigger_timer.reset()
         else:
-            self.triggerreleased = 1
-            self.panel_eject_solenoid.set(False) 
-            self.panel_retract_solenoid.set(False)
+            #if the delay has pased, we should turn off the solenoid
+            if self.trigger_timer.hasPeriodPassed(self.solenoid_delay):
+                self.panel_eject_solenoid.set(False)
 
 
         #self.panel_eject_solenoid.set(stick['trigger_button'])
