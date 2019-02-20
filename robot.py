@@ -164,11 +164,11 @@ class MyRobot(wpilib.TimedRobot):
 
         # Define all the variables for controlling crosstrack
         self.crosstrack_PID_vars = {
-            'kP': 0.03,
+            'kP': 0.00003,
             'kI': 0.0,
             'kD': 0.00,
             'kF': 0.00,
-            'max': .2,
+            'max': 1,
             'kTolerance' : 2.0,
         }
 
@@ -184,7 +184,7 @@ class MyRobot(wpilib.TimedRobot):
             self.crosstrack_output
         )
         #then, we set some parameters
-        self.crosstrack_PID.setInputRange(-100, 100)
+        self.crosstrack_PID.setInputRange(-200, 200)
         self.crosstrack_PID.setOutputRange(-self.crosstrack_PID_vars['max'], self.crosstrack_PID_vars['max'])
         self.crosstrack_PID.setAbsoluteTolerance(self.crosstrack_PID_vars['kTolerance'])
         

@@ -70,10 +70,12 @@ class VisionCamera(wpilib.interfaces.PIDSource):
             self.data = struct.unpack('<ii', bytearray(res))
         except:
             self.data = [0,0]
-        self.offset = self.data[0]
+        self.offset = self.data[0]+60
         self.distance = self.data[1]    
 
-        #print('got data: %i' % self.data)
+        # print('got data: %i' % self.data)
+        print('got offset: %i' % self.offset)
+        print('got distance: %i' % self.distance)
 
     def pidGet(self):
 
