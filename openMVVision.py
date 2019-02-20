@@ -46,7 +46,6 @@ while(True):
     thresholds = (65, 255)
     # Find all the "blobs"
     blobs = img.find_blobs([thresholds],roi=roi, x_stride=x_stride, y_stride=y_stride, pixels_threshold=100, area_threshold=100, merge=True)
-    print (len(blobs))
     # IF there's two blobs and they're rotated at the right angle, then figure out where the target is
     if len(blobs) >= 2:
         #sort the blob list so that the biggest blobs are at the start of the list
@@ -74,9 +73,12 @@ while(True):
             if started == False:
                 start = utime.ticks_ms()
                 started = True
-            if started and utime.ticks_diff(utime.ticks_ms(), start) > 1000:
+            if started and utime.ticks_diff(utime.ticks_ms(), start) > 50:
                 #actually sends the message to the robot, center and distance
-                i2c.send(struct.pack('<ii', int(center), int(distance)))
+                try:
+                    i2c.send(struct.pack('<ii', int(center), int(distance)))
+                except:
+                    print('I2C failed')
                 print('SEND: %i' % center)
                 i += 1
                 started = False

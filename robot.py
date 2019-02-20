@@ -101,9 +101,9 @@ class MyRobot(wpilib.TimedRobot):
         self.trigger_timer = wpilib.Timer()
         self.trigger_timer.start()
         self.solenoid_delay = 0.5 #seconds
- 
-
-      
+         
+        self.timer = wpilib.Timer()
+        self.timer.start()
         
 
         #If we want to set up digital output like LEDs, we can do it here
@@ -195,6 +195,10 @@ class MyRobot(wpilib.TimedRobot):
         #this looks for data from the camera
         self.loopCounter += 1
 
+
+        if self.timer.hasPeriodPassed(0.05):
+            self.visionCamera.poll()
+
         #if self.loopCounter%10==0:
         #    print("Heading is: "+str(self.rotation_source.pidGet()))
 
@@ -205,7 +209,7 @@ class MyRobot(wpilib.TimedRobot):
     def autonomousInit(self):
         """This function is run once each time the robot enters autonomous mode."""
         #self.timer.reset()
-        #self.timer.start()
+        self.timer.start()
 
     def autonomousPeriodic(self):
         """This function is called periodically during autonomous."""
