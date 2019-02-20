@@ -38,13 +38,13 @@ class MyRobot(wpilib.TimedRobot):
         self.dashboard.putNumber("Test Number", 5)
 
         # Set up all of our drive motors
-        self.leftf_motor = wpilib.VictorSP(0)
-        self.leftr_motor  = wpilib.VictorSP(1)
-        self.rightf_motor = wpilib.VictorSP(2)
-        self.rightr_motor = wpilib.VictorSP(3)
+        self.left_front_motor = wpilib.VictorSP(0)
+        self.left_rear_motor  = wpilib.VictorSP(1)
+        self.right_front_motor = wpilib.VictorSP(2)
+        self.right_rear_motor = wpilib.VictorSP(3)
 
-        # Then we set up our climbing motor
-        #self.climb_motor = wpilib.VictorSP(4)
+        #Then we set up our climbing motor
+        self.climb_motor = wpilib.VictorSP(4)
 
 
         # Next, let's define the angles for the targets angles are positive clockwise looking from above
@@ -61,28 +61,39 @@ class MyRobot(wpilib.TimedRobot):
             }
 
         #Set up to drive with mecanum wheels
-        self.drive = wpilib.drive.MecanumDrive(self.leftf_motor, self.leftr_motor, self.rightf_motor, self.rightr_motor)
+        self.drive = wpilib.drive.MecanumDrive(self.left_front_motor, self.left_rear_motor, self.right_front_motor, self.right_rear_motor)
         #set up the joystick
         self.joystick = wpilib.Joystick(0)
         #set the ID of the one pneumatic control module (PCM) we are going to use
         self.pneumatic_control_ID = 0
+
+        #let's define the digital inputs
+
+        self.climb_stop = wpilib.DigitalInput(0)
+
 
         # Now, let's set up all of the buttons we are going to use
 
         #Trigger will shoot the panel eject solenoids
         self.trigger_button = wpilib.buttons.JoystickButton(self.joystick, 1)
         #thumb button will retract the panel eject solenoids
-        self.thumb_button = wpilib.buttons.JoystickButton(self.joystick, 2)
+        self.robot_lift = wpilib.buttons.JoystickButton(self.joystick, 8)
         # button3 for controlling the robot to a preset target angle (see self.target_angles above) 
         self.snap_angle_button = wpilib.buttons.JoystickButton(self.joystick, 3)
         # button4 for controlling the robot to be lined up with the target in crosstrack
         self.control_crosstrack_button = wpilib.buttons.JoystickButton(self.joystick, 4)
         #button 7 sets zero point for angle
-        self.zero_button = wpilib.buttons.JoystickButton(self.joystick, 7)
+        self.reset_angle_button = wpilib.buttons.JoystickButton(self.joystick, 7)
         #button 5 is to only translate 
         self.translate_only_button = wpilib.buttons.JoystickButton(self.joystick, 5)
         #button 6 is to only rotate
         self.rotate_only_button = wpilib.buttons.JoystickButton(self.joystick, 6)
+
+        #buttons to climb
+        self.climb_up = wpilib.buttons.JoystickButton(self.joystick, 10)
+        self.climb_down = wpilib.buttons.JoystickButton(self.joystick, 9)
+
+        self.panel_lift_button = wpilib.buttons.JoystickButton(self.joystick, 2)
 
         #if we want to use the throttle we should set it up here
         self.useThrottle = True
@@ -101,14 +112,14 @@ class MyRobot(wpilib.TimedRobot):
 
         # Now, let's set up the solenoids we are going to use    
         self.panel_eject_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 0)
-        self.panel_retract_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 1)
-        self.panel_new_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
+        self.panel_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 1)
+        self.robot_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
 
 
         #self.climb_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
 
         #launch the camera server so that we can view the USB camera on the driver station
-        #wpilib.CameraServer.launch()
+        wpilib.CameraServer.launch()
         #now, make an object for the vision camera
         self.visionCamera = VisionCamera()
 
@@ -210,12 +221,17 @@ class MyRobot(wpilib.TimedRobot):
             'rot': -.8*self.joystick.getTwist(),
             'throttle': (-self.joystick.getThrottle()+1)/2,
             'trigger_button': self.trigger_button.get(),
-            'thumb_button': self.thumb_button.get(),
-            'zero_button' : self.zero_button.get(),
+            'robot_lift': self.robot_lift.get(),
+            'reset_angle_button' : self.reset_angle_button.get(),
             'snap_angle_button': self.snap_angle_button.get(),
             'translate_only_button': self.translate_only_button.get(),
             'rotate_only_button': self.rotate_only_button.get(),
             'control_crosstrack_button': self.control_crosstrack_button.get(),
+            'climb_up': self.climb_up.get(),
+            'climb_down': self.climb_down.get(),
+            'panel_lift_button': self.panel_lift_button.get(),
+
+
         }
 
         #if self.loopCounter%100==0:
@@ -226,7 +242,7 @@ class MyRobot(wpilib.TimedRobot):
 
         #print(self.rotation_PID_vars['kP'])
 
-        if stick['zero_button']:
+        if stick['reset_angle_button']:  #7
             if self.zeroOnce == 0:
                 print("Old angle offset was: " + str(self.rotation_source.angleOffset))
                 self.rotation_source.zeroAngleOffset()
@@ -234,8 +250,17 @@ class MyRobot(wpilib.TimedRobot):
                 print("Heading is: " + str(self.rotation_source.pidGet()))
                 self.zeroOnce = self.zeroOnce + 1
 
-        if stick['zero_button'] is False:
+        if stick['reset_angle_button'] is False:
             self.zeroOnce = 0
+
+
+        if stick['climb_up'] and self.climb_stop.get()==False:
+            self.climb_motor.set(stick['throttle'])
+
+        elif stick['climb_down']:
+            self.climb_motor.set(-stick['throttle'])
+        else:
+            self.climb_motor.set(0)
 
         #print(stick)
 
@@ -268,7 +293,10 @@ class MyRobot(wpilib.TimedRobot):
 
 
         #self.panel_eject_solenoid.set(stick['trigger_button'])
-        self.panel_new_solenoid.set(stick['thumb_button'])
+        self.robot_lift_solenoid.set(stick['robot_lift'])
+        self.panel_lift_solenoid.set(stick['panel_lift_button'])
+
+
 
        
         #In order to snap to control, we need to find the angle we are currently at, then set the target angle 
@@ -293,7 +321,8 @@ class MyRobot(wpilib.TimedRobot):
             else:    
 
                 if self.loopCounter%10 ==0:
-                    print("Error: %s, Position: %s, Setpoint: %s"%(self.rotation_source.pidGet()-180-self.rotation_PID.getSetpoint(),self.rotation_source.pidGet(),self.rotation_PID.getSetpoint()))
+                    print("Error: %s, Position: %s, Setpoint: %s"%(self.rotation_source.pidGet()-180-self.rotation_PID.getSetpoint(),\
+                        self.rotation_source.pidGet(),self.rotation_PID.getSetpoint()))
 
                 #doing a little extra here to not let it change too quickly
                 maxChange = 0.05
