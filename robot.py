@@ -77,23 +77,28 @@ class MyRobot(wpilib.TimedRobot):
         #Trigger will shoot the panel eject solenoids
         self.trigger_button = wpilib.buttons.JoystickButton(self.joystick, 1)
         #thumb button will retract the panel eject solenoids
-        self.robot_lift = wpilib.buttons.JoystickButton(self.joystick, 8)
+        
         # button3 for controlling the robot to a preset target angle (see self.target_angles above) 
-        self.snap_angle_button = wpilib.buttons.JoystickButton(self.joystick, 3)
+        self.snap_angle_button = wpilib.buttons.JoystickButton(self.joystick, 2)
         # button4 for controlling the robot to be lined up with the target in crosstrack
         self.control_crosstrack_button = wpilib.buttons.JoystickButton(self.joystick, 4)
         #button 7 sets zero point for angle
-        self.reset_angle_button = wpilib.buttons.JoystickButton(self.joystick, 7)
+        self.reset_angle_button = wpilib.buttons.JoystickButton(self.joystick, 11)
         #button 5 is to only translate 
-        self.translate_only_button = wpilib.buttons.JoystickButton(self.joystick, 5)
+        #self.translate_only_button = wpilib.buttons.JoystickButton(self.joystick, 5)
         #button 6 is to only rotate
         self.rotate_only_button = wpilib.buttons.JoystickButton(self.joystick, 6)
 
         #buttons to climb
+        self.foot_release = wpilib.buttons.JoystickButton(self.joystick, 12)
         self.climb_up = wpilib.buttons.JoystickButton(self.joystick, 10)
         self.climb_down = wpilib.buttons.JoystickButton(self.joystick, 9)
+        self.robot_lift = wpilib.buttons.JoystickButton(self.joystick, 8)
 
-        self.panel_lift_button = wpilib.buttons.JoystickButton(self.joystick, 2)
+
+
+        self.panel_up_button = wpilib.buttons.JoystickButton(self.joystick, 5)
+        self.panel_down_button = wpilib.buttons.JoystickButton(self.joystick, 3)
 
         #if we want to use the throttle we should set it up here
         self.useThrottle = True
@@ -114,6 +119,7 @@ class MyRobot(wpilib.TimedRobot):
         self.panel_eject_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 0)
         self.panel_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 1)
         self.robot_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
+        self.foot_release_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 3)
 
 
         #self.climb_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
@@ -213,6 +219,7 @@ class MyRobot(wpilib.TimedRobot):
 
     def autonomousPeriodic(self):
         """This function is called periodically during autonomous."""
+        self.teleopPeriodic()
 
 
     def teleopPeriodic(self):
@@ -228,12 +235,14 @@ class MyRobot(wpilib.TimedRobot):
             'robot_lift': self.robot_lift.get(),
             'reset_angle_button' : self.reset_angle_button.get(),
             'snap_angle_button': self.snap_angle_button.get(),
-            'translate_only_button': self.translate_only_button.get(),
+            'translate_only_button': False, # self.translate_only_button.get(),
             'rotate_only_button': self.rotate_only_button.get(),
             'control_crosstrack_button': self.control_crosstrack_button.get(),
             'climb_up': self.climb_up.get(),
             'climb_down': self.climb_down.get(),
-            'panel_lift_button': self.panel_lift_button.get(),
+            'panel_up_button': self.panel_up_button.get(),
+            'panel_down_button': self.panel_down_button.get(),
+            'foot_release': self.foot_release.get(),
 
 
         }
@@ -256,6 +265,7 @@ class MyRobot(wpilib.TimedRobot):
 
         if stick['reset_angle_button'] is False:
             self.zeroOnce = 0
+
 
 
         if stick['climb_up'] and self.climb_stop.get()==False:
@@ -298,9 +308,18 @@ class MyRobot(wpilib.TimedRobot):
 
         #self.panel_eject_solenoid.set(stick['trigger_button'])
         self.robot_lift_solenoid.set(stick['robot_lift'])
-        self.panel_lift_solenoid.set(stick['panel_lift_button'])
+        
+        if stick['panel_up_button']: 
+            self.panel_lift_solenoid.set(False)
 
 
+        if stick['panel_down_button']: 
+            self.panel_lift_solenoid.set(True)
+
+        if stick['foot_release']: 
+            self.foot_release_solenoid.set(True)
+
+        
 
        
         #In order to snap to control, we need to find the angle we are currently at, then set the target angle 
