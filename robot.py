@@ -91,14 +91,15 @@ class MyRobot(wpilib.TimedRobot):
 
         #buttons to climb
         self.foot_release = wpilib.buttons.JoystickButton(self.joystick, 12)
+        self.foot_unrelease = wpilib.buttons.JoystickButton(self.joystick, 7)
         self.climb_up = wpilib.buttons.JoystickButton(self.joystick, 10)
         self.climb_down = wpilib.buttons.JoystickButton(self.joystick, 9)
         self.robot_lift = wpilib.buttons.JoystickButton(self.joystick, 8)
 
 
 
-        self.panel_up_button = wpilib.buttons.JoystickButton(self.joystick, 5)
-        self.panel_down_button = wpilib.buttons.JoystickButton(self.joystick, 3)
+        self.panel_up_button = wpilib.buttons.JoystickButton(self.joystick, 3)
+        self.panel_down_button = wpilib.buttons.JoystickButton(self.joystick, 5)
 
         #if we want to use the throttle we should set it up here
         self.useThrottle = True
@@ -117,9 +118,10 @@ class MyRobot(wpilib.TimedRobot):
 
         # Now, let's set up the solenoids we are going to use    
         self.panel_eject_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 0)
-        self.panel_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 1)
+        self.panel_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 4)
         self.robot_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
         self.foot_release_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 3)
+        self.panel_down_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 1)
 
 
         #self.climb_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
@@ -243,6 +245,8 @@ class MyRobot(wpilib.TimedRobot):
             'panel_up_button': self.panel_up_button.get(),
             'panel_down_button': self.panel_down_button.get(),
             'foot_release': self.foot_release.get(),
+            'foot_unrelease': self.foot_unrelease.get(),
+
 
 
         }
@@ -301,7 +305,7 @@ class MyRobot(wpilib.TimedRobot):
             self.panel_eject_solenoid.set(True)
             self.trigger_timer.reset()
         else:
-            #if the delay has pased, we should turn off the solenoid
+            #if the delay has pased, we should turn off the solenoid 
             if self.trigger_timer.hasPeriodPassed(self.solenoid_delay):
                 self.panel_eject_solenoid.set(False)
 
@@ -311,13 +315,18 @@ class MyRobot(wpilib.TimedRobot):
         
         if stick['panel_up_button']: 
             self.panel_lift_solenoid.set(False)
+            self.panel_down_solenoid.set(True)
 
 
         if stick['panel_down_button']: 
             self.panel_lift_solenoid.set(True)
+            self.panel_down_solenoid.set(False)
 
         if stick['foot_release']: 
             self.foot_release_solenoid.set(True)
+            
+        if stick['foot_unrelease']: 
+            self.foot_release_solenoid.set(False)
 
         
 
