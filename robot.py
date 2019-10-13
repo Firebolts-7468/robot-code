@@ -20,13 +20,13 @@ class MyRobot(wpilib.TimedRobot):
 
 
     target = ntproperty("/camera/target", (0, 0.0, 0.0)) #found, angle and distance
-    
+
 
     def robotInit(self):
         """
         This function is called upon program startup and
         should be used for any initialization code.
-        """ 
+        """
         self.loopCounter = 0
 
         # Set up the network tables so we can talk to the driver station
@@ -77,14 +77,14 @@ class MyRobot(wpilib.TimedRobot):
         #Trigger will shoot the panel eject solenoids
         self.trigger_button = wpilib.buttons.JoystickButton(self.joystick, 1)
         #thumb button will retract the panel eject solenoids
-        
-        # button3 for controlling the robot to a preset target angle (see self.target_angles above) 
+
+        # button3 for controlling the robot to a preset target angle (see self.target_angles above)
         self.snap_angle_button = wpilib.buttons.JoystickButton(self.joystick, 2)
         # button4 for controlling the robot to be lined up with the target in crosstrack
         self.flip_direction_button = wpilib.buttons.JoystickButton(self.joystick, 4)
         #button 7 sets zero point for angle
         #self.reset_angle_button = wpilib.buttons.JoystickButton(self.joystick, 11)
-        #button 5 is to only translate 
+        #button 5 is to only translate
         #self.translate_only_button = wpilib.buttons.JoystickButton(self.joystick, 5)
         #button 6 is to only rotate
         self.rotate_only_button = wpilib.buttons.JoystickButton(self.joystick, 6)
@@ -108,16 +108,16 @@ class MyRobot(wpilib.TimedRobot):
         self.trigger_timer = wpilib.Timer()
         self.trigger_timer.start()
         self.solenoid_delay = 0.5 #seconds
-         
+
         self.timer = wpilib.Timer()
         self.timer.start()
-        
+
 
         #If we want to set up digital output like LEDs, we can do it here
-            # self.light = wpilib.DigitalOutput(0) 
-            # self.light2 = wpilib.DigitalOutput(9) 
+            # self.light = wpilib.DigitalOutput(0)
+            # self.light2 = wpilib.DigitalOutput(9)
 
-        # Now, let's set up the solenoids we are going to use    
+        # Now, let's set up the solenoids we are going to use
         self.panel_eject_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 0)
         self.panel_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 4)
         self.robot_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
@@ -157,13 +157,13 @@ class MyRobot(wpilib.TimedRobot):
         self.rotation_output = PID_Output()
         #then, we make the PID object
         self.rotation_PID = wpilib.PIDController(
-            self.rotation_PID_vars['kP'], 
-            self.rotation_PID_vars['kI'], 
-            self.rotation_PID_vars['kD'], 
-            self.rotation_PID_vars['kF'], 
-            self.rotation_source, 
-            self.rotation_output, 
-            
+            self.rotation_PID_vars['kP'],
+            self.rotation_PID_vars['kI'],
+            self.rotation_PID_vars['kD'],
+            self.rotation_PID_vars['kF'],
+            self.rotation_source,
+            self.rotation_output,
+
         )
         #then, we set some parameters
         self.rotation_PID.setInputRange(0, 360)
@@ -187,21 +187,21 @@ class MyRobot(wpilib.TimedRobot):
         self.crosstrack_output = PID_Output()
         #then, we make the PID object
         self.crosstrack_PID = wpilib.PIDController(
-            self.crosstrack_PID_vars['kP'], 
-            self.crosstrack_PID_vars['kI'], 
-            self.crosstrack_PID_vars['kD'], 
-            self.crosstrack_PID_vars['kF'], 
-            self.visionCamera, 
+            self.crosstrack_PID_vars['kP'],
+            self.crosstrack_PID_vars['kI'],
+            self.crosstrack_PID_vars['kD'],
+            self.crosstrack_PID_vars['kF'],
+            self.visionCamera,
             self.crosstrack_output
         )
         #then, we set some parameters
         self.crosstrack_PID.setInputRange(-200, 200)
         self.crosstrack_PID.setOutputRange(-self.crosstrack_PID_vars['max'], self.crosstrack_PID_vars['max'])
         self.crosstrack_PID.setAbsoluteTolerance(self.crosstrack_PID_vars['kTolerance'])
-        
+
         #initiate the "zero out" function
         self.zeroOnce = 0
-   
+
     def disabledPeriodic(self):
         #this looks for data from the camera
         self.loopCounter += 1
@@ -228,14 +228,14 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def teleopPeriodic(self):
-        
+
         if self.zeroAngleFirst:
             print("Old angle offset was: " + str(self.rotation_source.angleOffset))
             self.rotation_source.zeroAngleOffset()
             print("New angle offset is: " + str(self.rotation_source.angleOffset))
             print("Heading is: " + str(self.rotation_source.pidGet()))
             self.zeroOnce = self.zeroOnce + 1
-            self.zeroAngleFirst = False;
+            self.zeroAngleFirst = False
 
 
 
@@ -309,7 +309,7 @@ class MyRobot(wpilib.TimedRobot):
         if stick['translate_only_button']:
             stick['rot'] = 0
         #if we want to rotate only, we should zero out the x and y
-        if stick['rotate_only_button']:  
+        if stick['rotate_only_button']:
             stick['x'] = 0
             stick['y'] = 0
             print("Position: %s"%(self.rotation_source.pidGet()))
@@ -321,44 +321,41 @@ class MyRobot(wpilib.TimedRobot):
             self.panel_eject_solenoid.set(True)
             self.trigger_timer.reset()
         else:
-            #if the delay has pased, we should turn off the solenoid 
+            #if the delay has pased, we should turn off the solenoid
             if self.trigger_timer.hasPeriodPassed(self.solenoid_delay):
                 self.panel_eject_solenoid.set(False)
 
 
         #self.panel_eject_solenoid.set(stick['trigger_button'])
         if stick['robot_lift']:
-            self.robot_lift_solenoid.set(True);
-            self.robot_unlift_solenoid.set(False);
-        
+            self.robot_lift_solenoid.set(True)
+            self.robot_unlift_solenoid.set(False)
+
         if stick['robot_unlift']:
-            self.robot_lift_solenoid.set(False);
-            self.robot_unlift_solenoid.set(True);
+            self.robot_lift_solenoid.set(False)
+            self.robot_unlift_solenoid.set(True)
 
-
-
-
-        if stick['panel_up_button']: 
+        if stick['panel_up_button']:
             self.panel_lift_solenoid.set(False)
             self.panel_down_solenoid.set(True)
 
 
-        if stick['panel_down_button']: 
+        if stick['panel_down_button']:
             self.panel_lift_solenoid.set(True)
             self.panel_down_solenoid.set(False)
 
-        if stick['foot_release']: 
+        if stick['foot_release']:
             self.foot_release_solenoid.set(True)
-            
-        if stick['foot_unrelease']: 
+
+        if stick['foot_unrelease']:
             self.foot_release_solenoid.set(False)
 
-        
 
-       
-        #In order to snap to control, we need to find the angle we are currently at, then set the target angle 
+
+
+        #In order to snap to control, we need to find the angle we are currently at, then set the target angle
             #to the closest target angle
-        if stick['snap_angle_button']: 
+        if stick['snap_angle_button']:
             if not self.snappingToAngle:
                 #this is the first time, so we need to set where to snap to
                 angleError = 360 #start with a big error
@@ -375,7 +372,7 @@ class MyRobot(wpilib.TimedRobot):
                         #self.rotation_PID.setSetpoint(angle)
                 self.rotation_PID.enable()
                 self.snappingToAngle = True
-            else:    
+            else:
 
                 if self.loopCounter%10 ==0:
                     print("Error: %s, Position: %s, Setpoint: %s"%(self.rotation_source.pidGet()-180-self.rotation_PID.getSetpoint(),\
@@ -405,7 +402,7 @@ class MyRobot(wpilib.TimedRobot):
         #for control crosstrack, we need to take the control signal from crosstrack PID
         if stick['flip_direction_button']:
             stick['x'] = -stick['x']
-            stick['y'] = -stick['yyy']
+            stick['y'] = -stick['y']
 
 
 
@@ -414,16 +411,16 @@ class MyRobot(wpilib.TimedRobot):
 
             # if not self.controllingCrosstrack:
             #     self.crosstrack_PID.setSetpoint(0)
-            #     self.crosstrack_PID.enable()  
-            #     self.controllingCrosstrack = True  
+            #     self.crosstrack_PID.enable()
+            #     self.controllingCrosstrack = True
             # else:
             #     stick['x'] = self.crosstrack_output.correction
 
 
-        #now that we have figured everything out, we need to a actually drive the robot        
+        #now that we have figured everything out, we need to a actually drive the robot
         self.drive.driveCartesian(stick['x'], stick['y'], stick['rot'])
 
-    
+
 if __name__ == "__main__":
     wpilib.run(MyRobot, physics_enabled=True)
 
