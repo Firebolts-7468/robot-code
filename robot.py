@@ -81,9 +81,9 @@ class MyRobot(wpilib.TimedRobot):
         # button3 for controlling the robot to a preset target angle (see self.target_angles above) 
         self.snap_angle_button = wpilib.buttons.JoystickButton(self.joystick, 2)
         # button4 for controlling the robot to be lined up with the target in crosstrack
-        self.control_crosstrack_button = wpilib.buttons.JoystickButton(self.joystick, 4)
+        self.flip_direction_button = wpilib.buttons.JoystickButton(self.joystick, 4)
         #button 7 sets zero point for angle
-        self.reset_angle_button = wpilib.buttons.JoystickButton(self.joystick, 11)
+        #self.reset_angle_button = wpilib.buttons.JoystickButton(self.joystick, 11)
         #button 5 is to only translate 
         #self.translate_only_button = wpilib.buttons.JoystickButton(self.joystick, 5)
         #button 6 is to only rotate
@@ -91,10 +91,11 @@ class MyRobot(wpilib.TimedRobot):
 
         #buttons to climb
         self.foot_release = wpilib.buttons.JoystickButton(self.joystick, 12)
-        self.foot_unrelease = wpilib.buttons.JoystickButton(self.joystick, 7)
+        self.foot_unrelease = wpilib.buttons.JoystickButton(self.joystick, 11)
         self.climb_up = wpilib.buttons.JoystickButton(self.joystick, 10)
         self.climb_down = wpilib.buttons.JoystickButton(self.joystick, 9)
         self.robot_lift = wpilib.buttons.JoystickButton(self.joystick, 8)
+        self.robot_unlift = wpilib.buttons.JoystickButton(self.joystick, 7)
 
 
 
@@ -120,10 +121,12 @@ class MyRobot(wpilib.TimedRobot):
         self.panel_eject_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 0)
         self.panel_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 4)
         self.robot_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
+        self.robot_unlift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 5)
         self.foot_release_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 3)
         self.panel_down_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 1)
 
 
+        self.zeroAngleFirst = True
         #self.climb_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
 
         #launch the camera server so that we can view the USB camera on the driver station
@@ -225,21 +228,34 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def teleopPeriodic(self):
+        
+        if self.zeroAngleFirst:
+            print("Old angle offset was: " + str(self.rotation_source.angleOffset))
+            self.rotation_source.zeroAngleOffset()
+            print("New angle offset is: " + str(self.rotation_source.angleOffset))
+            print("Heading is: " + str(self.rotation_source.pidGet()))
+            self.zeroOnce = self.zeroOnce + 1
+            self.zeroAngleFirst = False;
+
+
+
+
         """This function is called periodically during operator control."""
         self.loopCounter += 1
         #first, let's get all the data from the joystick so we know what we are working with
         stick = {
             'x': -self.joystick.getX(),
             'y': self.joystick.getY(),
-            'rot': -.8*self.joystick.getTwist(),
+            'rot': -.5*self.joystick.getTwist(),
             'throttle': (-self.joystick.getThrottle()+1)/2,
             'trigger_button': self.trigger_button.get(),
             'robot_lift': self.robot_lift.get(),
-            'reset_angle_button' : self.reset_angle_button.get(),
+            'robot_unlift': self.robot_unlift.get(),
+            'reset_angle_button' : False,
             'snap_angle_button': self.snap_angle_button.get(),
             'translate_only_button': False, # self.translate_only_button.get(),
             'rotate_only_button': self.rotate_only_button.get(),
-            'control_crosstrack_button': self.control_crosstrack_button.get(),
+            'flip_direction_button': self.flip_direction_button.get(),
             'climb_up': self.climb_up.get(),
             'climb_down': self.climb_down.get(),
             'panel_up_button': self.panel_up_button.get(),
@@ -311,8 +327,17 @@ class MyRobot(wpilib.TimedRobot):
 
 
         #self.panel_eject_solenoid.set(stick['trigger_button'])
-        self.robot_lift_solenoid.set(stick['robot_lift'])
+        if stick['robot_lift']:
+            self.robot_lift_solenoid.set(True);
+            self.robot_unlift_solenoid.set(False);
         
+        if stick['robot_unlift']:
+            self.robot_lift_solenoid.set(False);
+            self.robot_unlift_solenoid.set(True);
+
+
+
+
         if stick['panel_up_button']: 
             self.panel_lift_solenoid.set(False)
             self.panel_down_solenoid.set(True)
@@ -378,13 +403,21 @@ class MyRobot(wpilib.TimedRobot):
 
 
         #for control crosstrack, we need to take the control signal from crosstrack PID
-        if stick['control_crosstrack_button']:
-            if not self.controllingCrosstrack:
-                self.crosstrack_PID.setSetpoint(0)
-                self.crosstrack_PID.enable()  
-                self.controllingCrosstrack = True  
-            else:
-                stick['x'] = self.crosstrack_output.correction
+        if stick['flip_direction_button']:
+            stick['x'] = -stick['x']
+            stick['y'] = -stick['yyy']
+
+
+
+
+
+
+            # if not self.controllingCrosstrack:
+            #     self.crosstrack_PID.setSetpoint(0)
+            #     self.crosstrack_PID.enable()  
+            #     self.controllingCrosstrack = True  
+            # else:
+            #     stick['x'] = self.crosstrack_output.correction
 
 
         #now that we have figured everything out, we need to a actually drive the robot        
