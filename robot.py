@@ -180,6 +180,7 @@ class MyRobot(wpilib.TimedRobot):
             self.foot_release_solenoid.set(False)
 
         #now that we have figured everything out, we need to a actually drive the robot
+        # speak for yourself, Scott!
         self.drive.driveCartesian(stick['x'], stick['y'], stick['rot'])
 
 
