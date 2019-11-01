@@ -130,7 +130,7 @@ class MyRobot(wpilib.TimedRobot):
 
 
         #Use the throttle to scale the inputs from the joystick
-        stick['x'] = stick['x']*stick['throttle']
+        stick['x'] = stick['x']*stick['throttle']  #maybe we should add logic to this line??
         stick['y'] = stick['y']*stick['throttle']
         stick['rot'] = stick['rot']*stick['throttle']
 
@@ -182,11 +182,21 @@ class MyRobot(wpilib.TimedRobot):
         #now that we have figured everything out, we need to a actually drive the robot
         self.drive.driveCartesian(stick['x'], stick['y'], stick['rot'])
 
+    #logic to stop the robot from hitting the wall
+    def stopthewall(self):
+        int frontdist = getDistance()
+        int safedist = 4
+        if frontdist <= safedist:
+            return True
+        else:
+            return False
+
 
 if __name__ == "__main__":
     wpilib.run(MyRobot, physics_enabled=True)
 
 #Serena was here
+
 
 
 
