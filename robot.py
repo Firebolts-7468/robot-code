@@ -61,7 +61,6 @@ class MyRobot(wpilib.TimedRobot):
         self.panel_up_button = wpilib.buttons.JoystickButton(self.joystick, 3)
         #drops the panel arm
         self.panel_down_button = wpilib.buttons.JoystickButton(self.joystick, 5)
-
         #Drop the foot
         self.foot_release = wpilib.buttons.JoystickButton(self.joystick, 12)
         #Undo the foot release
@@ -74,6 +73,8 @@ class MyRobot(wpilib.TimedRobot):
         self.robot_lift = wpilib.buttons.JoystickButton(self.joystick, 8)
         #let the robot back down, although, you need to manually undo the solenoid on the robot
         self.robot_unlift = wpilib.buttons.JoystickButton(self.joystick, 7)
+
+        self.translate_only = wpilib.buttons.JoystickButton(self.joystick, 2)
 
 
         #timer so that we can retract the solenoid some time after we let go of the button
@@ -126,13 +127,19 @@ class MyRobot(wpilib.TimedRobot):
             'panel_down_button': self.panel_down_button.get(),
             'foot_release': self.foot_release.get(),
             'foot_unrelease': self.foot_unrelease.get(),
+            'translate_only': self.translate_only.get(),
         }
 
 
         #Use the throttle to scale the inputs from the joystick
         stick['x'] = stick['x']*stick['throttle']  #maybe we should add logic to this line??
         stick['y'] = stick['y']*stick['throttle']
-        stick['rot'] = stick['rot']*stick['throttle']
+       
+        #no rotation 
+        if stick['translate_only']:
+            stick['rot'] = 0
+        else:
+            stick['rot'] = stick['rot']*stick['throttle']
 
         #If the climb button is pressed, and the limit stop isn't hit we should climb at the throttle speed
         if stick['climb_up'] and self.climb_stop.get()==False:
@@ -179,13 +186,15 @@ class MyRobot(wpilib.TimedRobot):
         if stick['foot_unrelease']:
             self.foot_release_solenoid.set(False)
 
+        
+
         #now that we have figured everything out, we need to a actually drive the robot
         self.drive.driveCartesian(stick['x'], stick['y'], stick['rot'])
 
     #logic to stop the robot from hitting the wall
     def stopthewall(self):
-        int frontdist = getDistance()
-        int safedist = 4
+        frontdist = getDistance()
+        safedist = 4
         if frontdist <= safedist:
             return True
         else:
