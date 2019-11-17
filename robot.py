@@ -73,8 +73,10 @@ class MyRobot(wpilib.TimedRobot):
         self.robot_lift = wpilib.buttons.JoystickButton(self.joystick, 8)
         #let the robot back down, although, you need to manually undo the solenoid on the robot
         self.robot_unlift = wpilib.buttons.JoystickButton(self.joystick, 7)
-
+        #allows robot to only move left,right,up,down without turning
         self.translate_only = wpilib.buttons.JoystickButton(self.joystick, 2)
+        #opposite of the original movement
+        self.reverse = wpilib.buttons.JoystickButton(self.joystick, 4)
 
 
         #timer so that we can retract the solenoid some time after we let go of the button
@@ -101,8 +103,9 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def autonomousInit(self):
+        pass
         """This function is run once each time the robot enters autonomous mode."""
-        self.vision_timer.start()
+        #self.vision_timer.start()
 
     def autonomousPeriodic(self):
         """This function is called periodically during autonomous."""
@@ -128,18 +131,22 @@ class MyRobot(wpilib.TimedRobot):
             'foot_release': self.foot_release.get(),
             'foot_unrelease': self.foot_unrelease.get(),
             'translate_only': self.translate_only.get(),
+            'reverse': self.reverse.get(),
         }
-
-
-        #Use the throttle to scale the inputs from the joystick
-        stick['x'] = stick['x']*stick['throttle']  #maybe we should add logic to this line??
-        stick['y'] = stick['y']*stick['throttle']
        
         #no rotation 
         if stick['translate_only']:
             stick['rot'] = 0
         else:
             stick['rot'] = stick['rot']*stick['throttle']
+            
+        #Use the throttle to scale the inputs from the joystick
+        if stick['reverse']:
+            stick['x'] = -stick['x']*stick['throttle']  #maybe we should add logic to this line??
+            stick['y'] = -stick['y']*stick['throttle']
+        else:
+            stick['x'] = stick['x']*stick['throttle']  #maybe we should add logic to this line??
+            stick['y'] = stick['y']*stick['throttle']
 
         #If the climb button is pressed, and the limit stop isn't hit we should climb at the throttle speed
         if stick['climb_up'] and self.climb_stop.get()==False:
