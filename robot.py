@@ -92,6 +92,8 @@ class MyRobot(wpilib.TimedRobot):
         self.robot_unlift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 5)
         self.foot_release_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 3)
         self.panel_down_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 1)
+        # we should add one for removing the balls
+        
 
         #launch the camera server so that we can view the USB camera on the driver station
         wpilib.CameraServer.launch()
