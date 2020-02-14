@@ -8,219 +8,63 @@ import wpilib.drive
 import wpilib.buttons
 
 from networktables import NetworkTables
-from networktables.util import ntproperty
 
-import navx
-from navx import AHRS
 
-from helpers import Rotation_Source, PID_Output, VisionCamera
-
+NetworkTables.initialize()
+sd = NetworkTables.getTable("SmartDashboard")
 
 class MyRobot(wpilib.TimedRobot):
-
-
-    target = ntproperty("/camera/target", (0, 0.0, 0.0)) #found, angle and distance
-
-
     def robotInit(self):
         """
         This function is called upon program startup and
         should be used for any initialization code.
         """
-        self.loopCounter = 0
+        self.shooterSpeed = 0
+        self.leftbusyBump = False
+        self.rightbusyBump = False
+        self.busyTrig = False
+        self.frontLeft = wpilib.Talon(0)
+        self.rearLeft = wpilib.Talon(1)
+        self.left = wpilib.SpeedControllerGroup(self.frontLeft, self.rearLeft)
 
-        # Set up the network tables so we can talk to the driver station
-        NetworkTables.initialize(server='10.74.68.2')
+        self.frontRight = wpilib.Talon(2)
+        self.rearRight = wpilib.Talon(3)
+        self.right = wpilib.SpeedControllerGroup(self.frontRight, self.rearRight)
 
-        #This gets us the dashboard entry, so that we can put information there
-        self.dashboard = NetworkTables.getTable('SmartDashboard')
-        #this tests transferring a value from the robot to the driver's station
-        self.dashboard.putNumber("Test Number", 5)
+        self.drive = wpilib.drive.DifferentialDrive(self.left, self.right)
 
-        # Set up all of our drive motors
-        self.left_front_motor = wpilib.VictorSP(0)
-        self.left_rear_motor  = wpilib.VictorSP(1)
-        self.right_front_motor = wpilib.VictorSP(2)
-        self.right_rear_motor = wpilib.VictorSP(3)
+        
+        self.shooterMotor = wpilib.Talon(4)
+        
+        self.indexerMotor = wpilib.Talon(5)
 
-        #Then we set up our climbing motor
-        self.climb_motor = wpilib.VictorSP(4)
-
-
-        # Next, let's define the angles for the targets angles are positive clockwise looking from above
-        self.target_angles = {
-            'starting': 0,
-            'panel_pickup':180,
-            'front_cargo':0,
-            'left_side_cargo':90,
-            'right_side_cargo':270,
-            'right_front_rocket': 29,
-            'right_rear_rocket': 151,
-            'left_front_rocket': 331,
-            'left_rear_rocket': 209,
-            }
-
-        #Set up to drive with mecanum wheels
-        self.drive = wpilib.drive.MecanumDrive(self.left_front_motor, self.left_rear_motor, self.right_front_motor, self.right_rear_motor)
-        #set up the joystick
-        self.joystick = wpilib.Joystick(0)
-        #set the ID of the one pneumatic control module (PCM) we are going to use
-        self.pneumatic_control_ID = 0
-
-        #let's define the digital inputs
-
-        self.climb_stop = wpilib.DigitalInput(0)
+        self.intakeMotor = wpilib.Talon(6)
+        #self.shooterMotor1.setInverted(True)
+        self.intakeOn = False
+        self.prevValue = False
+       
 
 
-        # Now, let's set up all of the buttons we are going to use
-
-        #Trigger will shoot the panel eject solenoids
-        self.trigger_button = wpilib.buttons.JoystickButton(self.joystick, 1)
-        #thumb button will retract the panel eject solenoids
-
-        # button3 for controlling the robot to a preset target angle (see self.target_angles above)
-        self.snap_angle_button = wpilib.buttons.JoystickButton(self.joystick, 2)
-        # button4 for controlling the robot to be lined up with the target in crosstrack
-        self.flip_direction_button = wpilib.buttons.JoystickButton(self.joystick, 4)
-        #button 7 sets zero point for angle
-        #self.reset_angle_button = wpilib.buttons.JoystickButton(self.joystick, 11)
-        #button 5 is to only translate
-        #self.translate_only_button = wpilib.buttons.JoystickButton(self.joystick, 5)
-        #button 6 is to only rotate
-        self.rotate_only_button = wpilib.buttons.JoystickButton(self.joystick, 6)
-
-        #buttons to climb
-        self.foot_release = wpilib.buttons.JoystickButton(self.joystick, 12)
-        self.foot_unrelease = wpilib.buttons.JoystickButton(self.joystick, 11)
-        self.climb_up = wpilib.buttons.JoystickButton(self.joystick, 10)
-        self.climb_down = wpilib.buttons.JoystickButton(self.joystick, 9)
-        self.robot_lift = wpilib.buttons.JoystickButton(self.joystick, 8)
-        self.robot_unlift = wpilib.buttons.JoystickButton(self.joystick, 7)
+       
 
 
 
-        self.panel_up_button = wpilib.buttons.JoystickButton(self.joystick, 3)
-        self.panel_down_button = wpilib.buttons.JoystickButton(self.joystick, 5)
 
-        #if we want to use the throttle we should set it up here
-        self.useThrottle = True
-        #timer so that we can retract the solenoid some time after we let go of the button
-        self.trigger_timer = wpilib.Timer()
-        self.trigger_timer.start()
-        self.solenoid_delay = 0.5 #seconds
-
-        self.timer = wpilib.Timer()
-        self.timer.start()
-
-
-        #If we want to set up digital output like LEDs, we can do it here
-            # self.light = wpilib.DigitalOutput(0)
-            # self.light2 = wpilib.DigitalOutput(9)
-
-        # Now, let's set up the solenoids we are going to use
-        self.panel_eject_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 0)
-        self.panel_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 4)
-        self.robot_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
-        self.robot_unlift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 5)
-        self.foot_release_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 3)
-        self.panel_down_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 1)
-
-
-        self.zeroAngleFirst = True
-        #self.climb_lift_solenoid = wpilib.Solenoid(self.pneumatic_control_ID, 2)
-
-        #launch the camera server so that we can view the USB camera on the driver station
-        wpilib.CameraServer.launch()
-        #now, make an object for the vision camera
-        self.visionCamera = VisionCamera()
-
-        #Next, let's set up all the stuff to do with the IMU
-        self.ahrs = AHRS.create_spi()
-
-        #We should define some variables for snapping to the closest target angle
-        self.snappingToAngle = False
-        self.controllingCrosstrack = False
-
-        # Define all the variables for controlling rotation
-        self.rotation_PID_vars = {
-            'kP': 0.0005,
-            'kI': 0,
-            'kD': 0.02,
-            'kF': 0.00,
-            'max': 1,
-            'kToleranceDegrees' : 2.0,
-        }
-
-        self.lastRotation = 0
-        #first, we need to instantiate our objects up above
-        self.rotation_source = Rotation_Source(self.ahrs)
-        self.rotation_output = PID_Output()
-        #then, we make the PID object
-        self.rotation_PID = wpilib.PIDController(
-            self.rotation_PID_vars['kP'],
-            self.rotation_PID_vars['kI'],
-            self.rotation_PID_vars['kD'],
-            self.rotation_PID_vars['kF'],
-            self.rotation_source,
-            self.rotation_output,
-
-        )
-        #then, we set some parameters
-        self.rotation_PID.setInputRange(0, 360)
-        self.rotation_PID.setContinuous(True)
-        self.rotation_PID.setOutputRange(-self.rotation_PID_vars['max'], self.rotation_PID_vars['max'])
-        self.rotation_PID.setAbsoluteTolerance(self.rotation_PID_vars['kToleranceDegrees'])
+        self.joystick = wpilib.XboxController(0)
 
 
 
-        # Define all the variables for controlling crosstrack
-        self.crosstrack_PID_vars = {
-            'kP': 0.00003,
-            'kI': 0.0,
-            'kD': 0.00,
-            'kF': 0.00,
-            'max': 1,
-            'kTolerance' : 2.0,
-        }
 
-        #first, we need to instantiate our objects up above
-        self.crosstrack_output = PID_Output()
-        #then, we make the PID object
-        self.crosstrack_PID = wpilib.PIDController(
-            self.crosstrack_PID_vars['kP'],
-            self.crosstrack_PID_vars['kI'],
-            self.crosstrack_PID_vars['kD'],
-            self.crosstrack_PID_vars['kF'],
-            self.visionCamera,
-            self.crosstrack_output
-        )
-        #then, we set some parameters
-        self.crosstrack_PID.setInputRange(-200, 200)
-        self.crosstrack_PID.setOutputRange(-self.crosstrack_PID_vars['max'], self.crosstrack_PID_vars['max'])
-        self.crosstrack_PID.setAbsoluteTolerance(self.crosstrack_PID_vars['kTolerance'])
-
-        #initiate the "zero out" function
-        self.zeroOnce = 0
+        
 
     def disabledPeriodic(self):
-        #this looks for data from the camera
-        self.loopCounter += 1
-
-
-        if self.timer.hasPeriodPassed(0.05):
-            self.visionCamera.poll()
-
-        #if self.loopCounter%10==0:
-        #    print("Heading is: "+str(self.rotation_source.pidGet()))
-
-
-
-
+        pass
 
     def autonomousInit(self):
         """This function is run once each time the robot enters autonomous mode."""
         #self.timer.reset()
-        self.timer.start()
+        #self.timer.start()
+        pass
 
     def autonomousPeriodic(self):
         """This function is called periodically during autonomous."""
@@ -228,197 +72,100 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def teleopPeriodic(self):
+        # self.drive.driveCartesian(stick['x'], stick['y'], stick['rot'])
+        #speeed for X change to same as Y
 
-        if self.zeroAngleFirst:
-            print("Old angle offset was: " + str(self.rotation_source.angleOffset))
-            self.rotation_source.zeroAngleOffset()
-            print("New angle offset is: " + str(self.rotation_source.angleOffset))
-            print("Heading is: " + str(self.rotation_source.pidGet()))
-            self.zeroOnce = self.zeroOnce + 1
-            self.zeroAngleFirst = False
+        #write a value to a network table that you can see on the driver station 
+
+        #when you push a button, show a value, when you release, show another value
 
 
 
-
-        """This function is called periodically during operator control."""
-        self.loopCounter += 1
-        #first, let's get all the data from the joystick so we know what we are working with
-        stick = {
-            'x': -self.joystick.getX(),
-            'y': self.joystick.getY(),
-            'rot': -.5*self.joystick.getTwist(),
-            'throttle': (-self.joystick.getThrottle()+1)/2,
-            'trigger_button': self.trigger_button.get(),
-            'robot_lift': self.robot_lift.get(),
-            'robot_unlift': self.robot_unlift.get(),
-            'reset_angle_button' : False,
-            'snap_angle_button': self.snap_angle_button.get(),
-            'translate_only_button': False, # self.translate_only_button.get(),
-            'rotate_only_button': self.rotate_only_button.get(),
-            'flip_direction_button': self.flip_direction_button.get(),
-            'climb_up': self.climb_up.get(),
-            'climb_down': self.climb_down.get(),
-            'panel_up_button': self.panel_up_button.get(),
-            'panel_down_button': self.panel_down_button.get(),
-            'foot_release': self.foot_release.get(),
-            'foot_unrelease': self.foot_unrelease.get(),
-
-
-
-        }
-
-        #if self.loopCounter%100==0:
-        #    print('P: %s, I: %s, D:%s'%(self.rotation_PID_vars['kP'],self.rotation_PID_vars['kI'],self.rotation_PID_vars['kD']))
-
-        if self.loopCounter%30==0 and self.target[0]>0:
-            print('See target at %s'%(self.target[2]))
-
-        #print(self.rotation_PID_vars['kP'])
-
-        if stick['reset_angle_button']:  #7
-            if self.zeroOnce == 0:
-                print("Old angle offset was: " + str(self.rotation_source.angleOffset))
-                self.rotation_source.zeroAngleOffset()
-                print("New angle offset is: " + str(self.rotation_source.angleOffset))
-                print("Heading is: " + str(self.rotation_source.pidGet()))
-                self.zeroOnce = self.zeroOnce + 1
-
-        if stick['reset_angle_button'] is False:
-            self.zeroOnce = 0
-
-
-
-        if stick['climb_up'] and self.climb_stop.get()==False:
-            self.climb_motor.set(stick['throttle'])
-
-        elif stick['climb_down']:
-            self.climb_motor.set(-stick['throttle'])
+        yvalue =  self.joystick.getY(0) / 3
+        xvalue =  self.joystick.getX(0) / 3
+        btvalue = self.joystick.getXButton()
+        if btvalue == True:
+            yvalue = yvalue / 4
+            xvalue = xvalue / 4
+        self.drive.arcadeDrive(yvalue, xvalue, squareInputs=True)
+        
+        triggervalue = self.joystick.getTriggerAxis(1)
+        if triggervalue > 0.3:
+            self.shooterMotor.set(0.5)
         else:
-            self.climb_motor.set(0)
+            self.shooterMotor.set(0)
+            
 
-        #print(stick)
-
-        #if we are going to use the throttle input, we should do that first
-        if self.useThrottle:
-            stick['x'] = stick['x']*stick['throttle']
-            stick['y'] = stick['y']*stick['throttle']
-            stick['rot'] = stick['rot']*stick['throttle']
-
-
-        #so, if we want to translate only, we need to zero out the input for twitsting
-        if stick['translate_only_button']:
-            stick['rot'] = 0
-        #if we want to rotate only, we should zero out the x and y
-        if stick['rotate_only_button']:
-            stick['x'] = 0
-            stick['y'] = 0
-            print("Position: %s"%(self.rotation_source.pidGet()))
-
-
-        #set the solenoids based on the button
-        if stick['trigger_button']:
-            #when we press the trigger, open the valve
-            self.panel_eject_solenoid.set(True)
-            self.trigger_timer.reset()
+        btvalue = self.joystick.getAButton()
+        if btvalue == True:
+            self.indexerMotor.set(0.3)
         else:
-            #if the delay has pased, we should turn off the solenoid
-            if self.trigger_timer.hasPeriodPassed(self.solenoid_delay):
-                self.panel_eject_solenoid.set(False)
+            self.indexerMotor.set(0)
 
 
-        #self.panel_eject_solenoid.set(stick['trigger_button'])
-        if stick['robot_lift']:
-            self.robot_lift_solenoid.set(True)
-            self.robot_unlift_solenoid.set(False)
+            # set up left and right bumpers; leftbumper= negative rightbumper= positve 
 
-        if stick['robot_unlift']:
-            self.robot_lift_solenoid.set(False)
-            self.robot_unlift_solenoid.set(True)
-
-        if stick['panel_up_button']:
-            self.panel_lift_solenoid.set(False)
-            self.panel_down_solenoid.set(True)
+        if self.joystick.getBumper(0) == True:
 
 
-        if stick['panel_down_button']:
-            self.panel_lift_solenoid.set(True)
-            self.panel_down_solenoid.set(False)
+            print(self.shooterSpeed)
+            if self.leftbusyBump == False:
 
-        if stick['foot_release']:
-            self.foot_release_solenoid.set(True)
-
-        if stick['foot_unrelease']:
-            self.foot_release_solenoid.set(False)
-
-
-
-
-        #In order to snap to control, we need to find the angle we are currently at, then set the target angle
-            #to the closest target angle
-        if stick['snap_angle_button']:
-            if not self.snappingToAngle:
-                #this is the first time, so we need to set where to snap to
-                angleError = 360 #start with a big error
-                currentAngle = self.rotation_source.pidGet() #get the angle the same way the PID control will
-                print('Starting angle: %s' %currentAngle)
-                #for any angle that has a smaller error, set the setpoint to it
-                for name,angle in self.target_angles.items():
-                    #angle_difference = 180 - abs(abs(currentAngle - angle) - 180)
-                    angle_difference = 180 - abs(abs(currentAngle - angle) - 180)
-                    if angle_difference < angleError:
-                        print('Setting angle to %s for %s with diff: %s' % (name,angle,angle_difference))
-                        angleError = angle_difference
-                        self.rotation_PID.setSetpoint((angle+180)%360)
-                        #self.rotation_PID.setSetpoint(angle)
-                self.rotation_PID.enable()
-                self.snappingToAngle = True
-            else:
-
-                if self.loopCounter%10 ==0:
-                    print("Error: %s, Position: %s, Setpoint: %s"%(self.rotation_source.pidGet()-180-self.rotation_PID.getSetpoint(),\
-                        self.rotation_source.pidGet(),self.rotation_PID.getSetpoint()))
-
-                #doing a little extra here to not let it change too quickly
-                maxChange = 0.05
-                if abs(self.lastRotation-self.rotation_output.correction)>maxChange:
-                    if self.lastRotation < self.rotation_output.correction:
-                        stick['rot'] = self.lastRotation+maxChange
-                    else:
-                        stick['rot'] = self.lastRotation-maxChange
-                else:
-                    stick['rot'] = self.rotation_output.correction
-                self.lastRotation = stick['rot']
-
+                
+                self.shooterSpeed = self.shooterSpeed - 1
+                self.leftbusyBump = True
 
         else:
-            #if we aren't snapping, we should reset this variable and turn off control
-            self.snappingToAngle = False
-            self.rotation_PID.disable()
-            self.lastRotation = 0
+            self.leftbusyBump = False
+
+        if self.joystick.getBumper(1) == True:
+
+
+            print(self.shooterSpeed)
+            if self.rightbusyBump == False:
+
+
+                self.shooterSpeed = self.shooterSpeed + 1
+                self.rightbusyBump = True
+
+        else:
+            self.rightbusyBump = False
 
 
 
 
-        #for control crosstrack, we need to take the control signal from crosstrack PID
-        if stick['flip_direction_button']:
-            stick['x'] = -stick['x']
-            stick['y'] = -stick['y']
+
+        
+        btvalue = self.joystick.getBButton()
+        
+        if btvalue == True and self.prevValue == False:
+            self.intakeOn = not self.intakeOn
+
+        self.prevValue = btvalue
 
 
 
 
+        if self.intakeOn == True:
+            self.intakeMotor.set(0.5)
+        else:
+            self.intakeMotor.set(0)
 
 
-            # if not self.controllingCrosstrack:
-            #     self.crosstrack_PID.setSetpoint(0)
-            #     self.crosstrack_PID.enable()
-            #     self.controllingCrosstrack = True
-            # else:
-            #     stick['x'] = self.crosstrack_output.correction
+
+        # # how to hook up a button to a motor
+        # aValue = self.joystick.getSomeButton()
+
+        # # if it's a normal button
+        # if aValue == True:
+        #     self.theMotor.set(speedValue)
+     
+        # # if it's an axis (like a joystick or a trigger)
+        # if aValue > someLimit:
+        #     self.theMotor.set(speedValue)
 
 
-        #now that we have figured everything out, we need to a actually drive the robot
-        self.drive.driveCartesian(stick['x'], stick['y'], stick['rot'])
+        
 
 
 if __name__ == "__main__":
