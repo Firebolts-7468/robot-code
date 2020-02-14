@@ -15,7 +15,7 @@ sensor.set_framesize(sensor.QVGA)  # 320×240
 sensor.skip_frames(time = 2000)
 sensor.set_auto_gain(False) # must be turned off for color tracking
 sensor.set_auto_whitebal(False) # must be turned off for color tracking
-sensor.set_auto_exposure(False, exposure_us = int(6000))
+sensor.set_auto_exposure(False, exposure_us = int(60))
 clock = time.clock()
 
 
@@ -36,21 +36,20 @@ while(True):
 
 
     #region of interest, only looks where we know targets might be, this does the whole width, but only the top 75%
-    roi = [0,0,img.width(),.75*img.height()]
+    roi = [0,0,img.width(),int(.75*img.height())]
 
     #x_stride and y_stride will make searching faster, we just need to know how big the blobs are
     x_stride = 5
-    y_stride = 5 
-    
+    y_stride = 5
+
     # The below grayscale threshold is set to only find extremely bright white areas.
     thresholds = (65, 255)
     # Find all the "blobs"
     blobs = img.find_blobs([thresholds],roi=roi, x_stride=x_stride, y_stride=y_stride, pixels_threshold=100, area_threshold=100, merge=True)
-    print (len(blobs))
     # IF there's two blobs and they're rotated at the right angle, then figure out where the target is
     if len(blobs) >= 2:
         #sort the blob list so that the biggest blobs are at the start of the list
-        blob.sort(key=lambda blob: blob.area(), reverse=True)
+        blobs.sort(key=lambda blob: blob.area(), reverse=True)
         if (((blobs[0]).rotation()*180/3.14 > 90) and ((blobs[1]).rotation()*180/3.14 < 90)) \
         or (((blobs[0]).rotation()*180/3.14 < 90) and ((blobs[1]).rotation()*180/3.14 > 90)):
 
@@ -74,9 +73,12 @@ while(True):
             if started == False:
                 start = utime.ticks_ms()
                 started = True
-            if started and utime.ticks_diff(utime.ticks_ms(), start) > 1000:
+            if started and utime.ticks_diff(utime.ticks_ms(), start) > 50:
                 #actually sends the message to the robot, center and distance
-                i2c.send(struct.pack('<ii', int(center), int(distance)))
+                try:
+                    i2c.send(struct.pack('<ii', int(center), int(distance)))
+                except:
+                    print('I2C failed')
                 print('SEND: %i' % center)
                 i += 1
                 started = False
