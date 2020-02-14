@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="us">
+<head>
+	<meta charset="utf-8">
+	<title>Firebolts Control</title>
+	<link rel = "icon" type = "image/png" href = "/images/icon.png">
+	<link href="css/jquery-ui.css" rel="stylesheet">
+	<link href="css/main.css" rel="stylesheet">
+
+
+	<!-- This starts the NetworkTables websocket, it can be accessed from multiple
+	     pages simultaneously -->
+	<script src="js/networktables.js"></script>
+	<!-- Obviously, you will want to copy this file locally in a real 
+	     dashboard, as the Driver Station won't have internet access -->
+	<script src="js/jquery-3.4.1.min.js"></script>
+	<script src="js/d3.min.js"></script>
+	<!-- utility functions to attach to a sendable chooser -->
+	<script src="js/utils.js"></script>
+
+	<script src="js/jquery-ui.js"></script>
+
+	<script src="js/main.js"></script>
+
+</head>
+<body>
+
+
+	
+
+<h1>Firebolts Robot Dashboard</h1>
+
+<div class="ui-widget">
+	<p>This page is where we can talk to our robot and give it commands.</p>
+</div>
+
+<div>
+  <span id="robotIndicator"></span>
+  Robot: <span id="robotstate">Unknown state</span> @ <span id="robotAddress">disconnected</span>
+</div>
+
+
+<!-- Intake -->
+<h2 class="demoHeaders">Subsystems</h2>
+<fieldset>
+	<legend>Intake</legend>
+	<div id="intake-control">
+		<select id="intake-mode">
+			<option>Controller</option>
+			<option>Force On</option>
+			<option>Force Off</option>
+		</select>
+		<label for="intake-dir-forward">Forward</label>
+		<input type="radio" name="intake-dir" id="intake-dir-forward">
+		<label for="intake-dir-reverse">Reverse</label>
+		<input type="radio" name="intake-dir" id="intake-dir-reverse">
+		<label for="intake-speed" class="ui-controlgroup-label">Speed (0-10)</label>
+		<input id="intake-speed" class="ui-spinner-input">
+	</div>
+</fieldset>
+<fieldset>
+	<legend>Indexer</legend>
+	<div id="indexer-control">
+		<select id="indexer-mode">
+			<option>Controller</option>
+			<option>Force On</option>
+			<option>Force Off</option>
+		</select>
+		<label for="indexer-dir-forward">Forward</label>
+		<input type="radio" name="indexer-dir" id="indexer-dir-forward">
+		<label for="indexer-dir-reverse">Reverse</label>
+		<input type="radio" name="indexer-dir" id="indexer-dir-reverse">
+		<label for="indexer-speed" class="ui-controlgroup-label">Speed (0-10)</label>
+		<input id="indexer-speed" class="ui-spinner-input">
+	</div>
+</fieldset>
+<fieldset>
+	<legend>Shooter</legend>
+	<div id="shooter-control">
+		<select id="shooter-mode">
+			<option>Controller</option>
+			<option>Force On</option>
+			<option>Force Off</option>
+		</select>
+		<label for="shooter-dir-forward">Forward</label>
+		<input type="radio" name="shooter-dir" id="shooter-dir-forward">
+		<label for="shooter-dir-reverse">Reverse</label>
+		<input type="radio" name="shooter-dir" id="shooter-dir-reverse">
+		<label for="shooter-speed" class="ui-controlgroup-label">Speed (0-100)</label>
+		<input id="shooter-speed" class="ui-spinner-input">
+		<span> Actual Speed:</span><span id="actual-shooter-speed">-1</span>
+		<div id="shooter-slider"></div>
+	</div>
+</fieldset>
+
+
+
+
+</body>
+</html>
