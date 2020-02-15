@@ -10,7 +10,7 @@
 
 	<!-- This starts the NetworkTables websocket, it can be accessed from multiple
 	     pages simultaneously -->
-	<script src="js/networktables.js"></script>
+	<script src="/networktables/networktables.js"></script>
 	<!-- Obviously, you will want to copy this file locally in a real 
 	     dashboard, as the Driver Station won't have internet access -->
 	<script src="js/jquery-3.4.1.min.js"></script>
@@ -39,9 +39,19 @@
   Robot: <span id="robotstate">Unknown state</span> @ <span id="robotAddress">disconnected</span>
 </div>
 
-
+<button id="load-defaults">Load Defaults</button>
 <!-- Intake -->
 <h2 class="demoHeaders">Subsystems</h2>
+<fieldset>
+	<legend>Drive</legend>
+	<div id="drive-control">
+		<span>Turn speed - </span><span id="xratioReal"></span><div id="xRatio-slider"></div>
+		<span>Forward Speed</span><div id="yRatio-slider"></div><span id="yratioReal"></span>
+		<span>Spin Speed</span><div id="spinRatio-slider"></div><span id="spinRatioReal"></span>
+		<span>Trim</span><div id="trim-slider"></div>
+	</div>
+</fieldset>
+
 <fieldset>
 	<legend>Intake</legend>
 	<div id="intake-control">

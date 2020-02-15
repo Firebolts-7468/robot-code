@@ -10,8 +10,7 @@ import wpilib.buttons
 from networktables import NetworkTables
 
 
-NetworkTables.initialize()
-sd = NetworkTables.getTable("SmartDashboard")
+
 
 class MyRobot(wpilib.TimedRobot):
     def robotInit(self):
@@ -19,16 +18,22 @@ class MyRobot(wpilib.TimedRobot):
         This function is called upon program startup and
         should be used for any initialization code.
         """
+        NetworkTables.initialize()
+        self.sd = NetworkTables.getTable("SmartDashboard")
+
+
         self.shooterSpeed = 0
         self.leftbusyBump = False
         self.rightbusyBump = False
         self.busyTrig = False
-        self.frontLeft = wpilib.Talon(0)
-        self.rearLeft = wpilib.Talon(1)
+
+
+        self.frontLeft = wpilib.Talon(2)
+        self.rearLeft = wpilib.Talon(3)
         self.left = wpilib.SpeedControllerGroup(self.frontLeft, self.rearLeft)
 
-        self.frontRight = wpilib.Talon(2)
-        self.rearRight = wpilib.Talon(3)
+        self.frontRight = wpilib.Talon(0)
+        self.rearRight = wpilib.Talon(1)
         self.right = wpilib.SpeedControllerGroup(self.frontRight, self.rearRight)
 
         self.drive = wpilib.drive.DifferentialDrive(self.left, self.right)
@@ -43,11 +48,12 @@ class MyRobot(wpilib.TimedRobot):
         self.intakeOn = False
         self.prevValue = False
        
+        self.sd.putNumber("Mytest",45)
 
 
        
 
-
+        self.cycleCount = 0
 
 
         self.joystick = wpilib.XboxController(0)
@@ -78,29 +84,74 @@ class MyRobot(wpilib.TimedRobot):
         #write a value to a network table that you can see on the driver station 
 
         #when you push a button, show a value, when you release, show another value
+        self.cycleCount+=1
 
 
+        #first, let's decide on how fast to go
+        xRatio = self.sd.getNumber("xRatio",3)
+        yRatio = self.sd.getNumber("yRatio",3)
+        spinRatio = self.sd.getNumber("spinRatio",3)
+        steeringTrim = self.sd.getNumber("steeringTrim",0)
+        shooterSpeed = self.sd.getNumber("newShooterSpeed",0.05)
 
-        yvalue =  self.joystick.getY(0) / 3
-        xvalue =  self.joystick.getX(0) / 3
-        btvalue = self.joystick.getXButton()
-        if btvalue == True:
-            yvalue = yvalue / 4
-            xvalue = xvalue / 4
-        self.drive.arcadeDrive(yvalue, xvalue, squareInputs=True)
+        if self.cycleCount%20==0:
+            print(str(xRatio)+' '+str(yRatio)+' '+str(shooterSpeed))
         
+        joystickYratio = 2
+        joystickXratio = 2
+
+
+        #get values from joystick
+        yvalue =  -self.joystick.getY(0)
+        xvalue =  self.joystick.getX(1)
+
+        #self.drive.arcadeDrive(yvalue/joystickYratio, xvalue/joystickXratio, squareInputs=True)
+        
+
+        leftTrigger = self.joystick.getTriggerAxis(0)
+        rightTrigger = self.joystick.getTriggerAxis(1)
+
+        if leftTrigger > .1 or rightTrigger >.1:
+            self.drive.curvatureDrive(yvalue/yRatio, (-leftTrigger+rightTrigger)/spinRatio, True)
+        else:
+            self.drive.curvatureDrive(yvalue/yRatio, xvalue/xRatio+steeringTrim/30, False)
+        #print(yvalue/joystickYratio)
+        
+        #now, let's send info our driver control station 
+
+
+
+
+        #Here, let's deal with the shooter
+
+
+        
+
+
+
         triggervalue = self.joystick.getTriggerAxis(1)
         if triggervalue > 0.3:
-            self.shooterMotor.set(0.5)
+            self.shooterMotor.set(shooterSpeed)
         else:
             self.shooterMotor.set(0)
             
+        #print("self.shooterSpeed")
+        #print(shooterSpeed)
+        
 
-        btvalue = self.joystick.getAButton()
-        if btvalue == True:
-            self.indexerMotor.set(0.3)
-        else:
-            self.indexerMotor.set(0)
+
+
+        #self.sd.putNumber("joystickXratio",joystickXratio)
+        #self.sd.putNumber("joystickYratio",joystickYratio)
+        self.sd.putNumber("shooterSpeed",shooterSpeed)
+
+        #here, let's deal with the indexer
+
+        # btvalue = self.joystick.getAButton()
+        # if btvalue == True:
+        #     self.indexerMotor.set(0.3)
+        # else:
+        #     self.indexerMotor.set(0)
 
 
             # set up left and right bumpers; leftbumper= negative rightbumper= positve 
