@@ -5,10 +5,9 @@
 
 import wpilib
 import wpilib.drive
-import wpilib.buttons
 
 from networktables import NetworkTables
-
+import wpilib.interfaces as wi
 
 
 
@@ -20,6 +19,7 @@ class MyRobot(wpilib.TimedRobot):
         """
         NetworkTables.initialize()
         self.sd = NetworkTables.getTable("SmartDashboard")
+        self.lime = NetworkTables.getTable("limelight")
 
 
         self.shooterSpeed = 0
@@ -27,16 +27,19 @@ class MyRobot(wpilib.TimedRobot):
         self.rightbusyBump = False
         self.busyTrig = False
 
+        #self.canFalcon = wpilib.
 
-        self.frontLeft = wpilib.Talon(2)
-        self.rearLeft = wpilib.Talon(3)
-        self.left = wpilib.SpeedControllerGroup(self.frontLeft, self.rearLeft)
 
-        self.frontRight = wpilib.Talon(0)
-        self.rearRight = wpilib.Talon(1)
-        self.right = wpilib.SpeedControllerGroup(self.frontRight, self.rearRight)
+        self.leftMotors = wpilib.Talon(0)
+        #self.rearLeft = wpilib.Talon(3)
+        
+        #self.left = wpilib.SpeedControllerGroup(self.frontLeft, self.rearLeft)
 
-        self.drive = wpilib.drive.DifferentialDrive(self.left, self.right)
+        self.rightMotors = wpilib.Talon(1)
+        #self.rearRight = wpilib.Talon(1)
+        #self.right = wpilib.SpeedControllerGroup(self.frontRight, self.rearRight)
+
+        self.drive = wpilib.drive.DifferentialDrive(self.leftMotors, self.rightMotors)
 
         
         self.shooterMotor = wpilib.Talon(4)
@@ -92,29 +95,39 @@ class MyRobot(wpilib.TimedRobot):
         yRatio = self.sd.getNumber("yRatio",3)
         spinRatio = self.sd.getNumber("spinRatio",3)
         steeringTrim = self.sd.getNumber("steeringTrim",0)
-        shooterSpeed = self.sd.getNumber("newShooterSpeed",0.05)
+        
+        intakeSpeed = self.sd.getNumber("intakeSpeed",0)
+        indexerSpeed = self.sd.getNumber("indexerSpeed",0)
+        shooterSpeed = self.sd.getNumber("shooterSpeed",0)
+
+        limeTx = self.lime.getNumber("tx",0)
+        limeTy = self.lime.getNumber("ty",0)
 
         if self.cycleCount%20==0:
             print(str(xRatio)+' '+str(yRatio)+' '+str(shooterSpeed))
-        
-        joystickYratio = 2
-        joystickXratio = 2
 
 
         #get values from joystick
-        yvalue =  -self.joystick.getY(0)
-        xvalue =  self.joystick.getX(1)
+        yvalue =  -self.joystick.getY(wi.GenericHID.Hand.kLeftHand)
+        xvalue =  self.joystick.getX(wi.GenericHID.Hand.kRightHand)
 
         #self.drive.arcadeDrive(yvalue/joystickYratio, xvalue/joystickXratio, squareInputs=True)
         
 
-        leftTrigger = self.joystick.getTriggerAxis(0)
-        rightTrigger = self.joystick.getTriggerAxis(1)
+        leftTrigger = self.joystick.getTriggerAxis(wi.GenericHID.Hand.kLeftHand)
+        rightTrigger = self.joystick.getTriggerAxis(wi.GenericHID.Hand.kRightHand)
 
         if leftTrigger > .1 or rightTrigger >.1:
             self.drive.curvatureDrive(yvalue/yRatio, (-leftTrigger+rightTrigger)/spinRatio, True)
+        elif self.joystick.getAButton():
+            if limeTx>5: limeTx=5
+            self.drive.curvatureDrive(0, limeTx/(5*spinRatio), True)
         else:
             self.drive.curvatureDrive(yvalue/yRatio, xvalue/xRatio+steeringTrim/30, False)
+        
+
+
+
         #print(yvalue/joystickYratio)
         
         #now, let's send info our driver control station 
@@ -129,11 +142,11 @@ class MyRobot(wpilib.TimedRobot):
 
 
 
-        triggervalue = self.joystick.getTriggerAxis(1)
-        if triggervalue > 0.3:
-            self.shooterMotor.set(shooterSpeed)
-        else:
-            self.shooterMotor.set(0)
+        # triggervalue = self.joystick.getTriggerAxis(1)
+        # if triggervalue > 0.3:
+        #     self.shooterMotor.set(shooterSpeed)
+        # else:
+        #     self.shooterMotor.set(0)
             
         #print("self.shooterSpeed")
         #print(shooterSpeed)
@@ -143,7 +156,7 @@ class MyRobot(wpilib.TimedRobot):
 
         #self.sd.putNumber("joystickXratio",joystickXratio)
         #self.sd.putNumber("joystickYratio",joystickYratio)
-        self.sd.putNumber("shooterSpeed",shooterSpeed)
+        #self.sd.putNumber("shooterSpeed",shooterSpeed)
 
         #here, let's deal with the indexer
 
@@ -156,51 +169,52 @@ class MyRobot(wpilib.TimedRobot):
 
             # set up left and right bumpers; leftbumper= negative rightbumper= positve 
 
-        if self.joystick.getBumper(0) == True:
+        # if self.joystick.getBumper(0) == True:
 
 
-            print(self.shooterSpeed)
-            if self.leftbusyBump == False:
+        #     print(self.shooterSpeed)
+        #     if self.leftbusyBump == False:
 
                 
-                self.shooterSpeed = self.shooterSpeed - 1
-                self.leftbusyBump = True
+        #         self.shooterSpeed = self.shooterSpeed - 1
+        #         self.leftbusyBump = True
 
-        else:
-            self.leftbusyBump = False
+        # else:
+        #     self.leftbusyBump = False
 
-        if self.joystick.getBumper(1) == True:
-
-
-            print(self.shooterSpeed)
-            if self.rightbusyBump == False:
+        # if self.joystick.getBumper(1) == True:
 
 
-                self.shooterSpeed = self.shooterSpeed + 1
-                self.rightbusyBump = True
+        #     print(self.shooterSpeed)
+        #     if self.rightbusyBump == False:
 
-        else:
-            self.rightbusyBump = False
+
+        #         self.shooterSpeed = self.shooterSpeed + 1
+        #         self.rightbusyBump = True
+
+        # else:
+        #     self.rightbusyBump = False
 
 
 
 
 
         
-        btvalue = self.joystick.getBButton()
+        # btvalue = self.joystick.getBButton()
         
-        if btvalue == True and self.prevValue == False:
-            self.intakeOn = not self.intakeOn
+        # if btvalue == True and self.prevValue == False:
+        #     self.intakeOn = not self.intakeOn
 
-        self.prevValue = btvalue
-
-
+        # self.prevValue = btvalue
 
 
-        if self.intakeOn == True:
-            self.intakeMotor.set(0.5)
-        else:
-            self.intakeMotor.set(0)
+
+
+        
+        self.intakeMotor.set(intakeSpeed)
+        self.shooterMotor.set(shooterSpeed)
+        self.indexerMotor.set(indexerSpeed)
+       
 
 
 

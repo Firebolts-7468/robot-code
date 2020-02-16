@@ -22,16 +22,14 @@ $(document).ready(function(){
         if(key=="/SmartDashboard/Mytest"){
             console.log('we see it!')
             console.log(value)
-        }else if(key=="/SmartDashboard/joystickXratio"){
-            $( "#xratioReal" ).text(value);
-            console.log('see stuff'+value)
-        }else if(key=="/SmartDashboard/joystickYratio"){
-            $( "#yratioReal" ).text(value);
-            console.log('ratio value')
-        }else if(key=="/SmartDashboard/shooterSpeed"){
-            $( "#actual-shooter-speed").text(value)
-        }else{
-            //console.log(value)
+        }else if(key=="/limelight/tx"){
+            $("#limeTX").text(value)
+        }else if(key=="/limelight/ty"){
+            $("#limeTY").text(value)
+        }
+
+        else{
+            console.log(key+"  "+value)
         }
     }, true);
 
@@ -39,10 +37,25 @@ $(document).ready(function(){
     $( "#load-defaults" ).button();
     $( "#load-defaults" ).click(function( event ) {
         console.log('loading defaults');
-            NetworkTables.putValue("/SmartDashboard/newShooterSpeed",  $("#shooter-slider").slider("option","value") );
-            NetworkTables.putValue("/SmartDashboard/xRatio",$("#xRatio-slider").slider("option","value"));
-            NetworkTables.putValue("/SmartDashboard/yRatio",$("#yRatio-slider").slider("option","value"));
-            NetworkTables.putValue("/SmartDashboard/steeringTrim",$("#spinRatio-slider").slider("option","value"));
+        $( "#xRatio-slider" ).trigger("change");
+        NetworkTables.putValue("/SmartDashboard/xRatio",$("#xRatio-slider").slider("option","value"));
+        NetworkTables.putValue("/SmartDashboard/yRatio",$("#yRatio-slider").slider("option","value"));
+        NetworkTables.putValue("/SmartDashboard/spinRatio",$("#spinRatio-slider").slider("option","value"));
+
+        NetworkTables.putValue("/SmartDashboard/steeringTrim",$("#spinRatio-slider").slider("option","value"));
+
+        NetworkTables.putValue("/SmartDashboard/indexerSpeed",$("#indexer-slider").slider("option","value"));
+        NetworkTables.putValue("/SmartDashboard/intakeSpeed",$("#intake-slider").slider("option","value"));
+        NetworkTables.putValue("/SmartDashboard/shooterSpeed",$("#shooter-slider").slider("option","value"));
+
+        $("#xRatioReal").text($("#xRatio-slider").slider("option","value"));
+        $("#yRatioReal").text($("#yRatio-slider").slider("option","value"));
+        $("#spinRatioReal").text($("#spinRatio-slider").slider("option","value"));
+        $("#trimReal").text($("#trim-slider").slider("option","value"));
+        $("#indexerReal").text($("#indexer-slider").slider("option","value"));
+        $("#intakeReal").text($("#intake-slider").slider("option","value"));
+        $("#shooterReal").text($("#shooter-slider").slider("option","value"));
+
 
     });
 
@@ -52,78 +65,88 @@ $(document).ready(function(){
     $( "#shooter-control" ).controlgroup();
 
 
-    
-    
-
-    $( "#shooter-speed" ).spinner({
-        change: function( event, ui ) {
-            console.log('see spin change')
-            $("#shooter-slider").slider( "value", $( this ).val() )
-
-        },
-        min: 1,
-        max: 100,
-    });
-
-
-    $( "#intake-speed" ).val(3);
-    $( "#indexer-speed" ).val(3);
-    $( "#shooter-speed" ).val(33);
-
-
-
-    $( "#shooter-slider" ).slider({
-        min: 0,
-        max: 1,
-        value: .3,
-        step: .01,
-        change: function( event, ui ) {
-            console.log('see slider: '+ui.value)
-            $( "#shooter-speed" ).val(ui.value);
-            NetworkTables.putValue("/SmartDashboard/newShooterSpeed",ui.value)
-        }
-    });
 
     $( "#xRatio-slider" ).slider({
         min: 1,
         max: 6,
         step: .2,
-        value: 1,
+        value: 3,
         change: function( event, ui ) {
             console.log('see xslider: '+ui.value)
             NetworkTables.putValue("/SmartDashboard/xRatio",ui.value)
-            $("#xratioReal").text(ui.value)
+            $("#xRatioReal").text(ui.value)
         }
     });
     $( "#yRatio-slider" ).slider({
         min: 1,
         max: 6,
-        value: .2,
+        step: .2,
+        value: 4,
         change: function( event, ui ) {
             console.log('see yslider: '+ui.value)
             NetworkTables.putValue("/SmartDashboard/yRatio",ui.value)
+            $("#yRatioReal").text(ui.value)
         }
     });
     $( "#spinRatio-slider" ).slider({
         min: 1,
         max: 6,
-        step: .2
+        step: .2,
         value: 3,
         change: function( event, ui ) {
             console.log('see yslider: '+ui.value)
             NetworkTables.putValue("/SmartDashboard/spinRatio",ui.value)
+            $("#spinRatioReal").text(ui.value)
         }
     });
     $( "#trim-slider" ).slider({
         min: -.3,
         max: .3,
         step: .05,
-        value: 2,
+        value: -.05,
         change: function( event, ui ) {
             console.log('see yslider: '+ui.value)
             NetworkTables.putValue("/SmartDashboard/steeringTrim",ui.value)
+            $("#trimReal").text(ui.value)
         }
     });
+
+    $( "#indexer-slider" ).slider({
+        min: 0,
+        max: 1,
+        step: .05,
+        value: 0,
+        change: function( event, ui ) {
+            console.log('see indexer: '+ui.value)
+            NetworkTables.putValue("/SmartDashboard/indexerSpeed",ui.value)
+            $("#indexerReal").text(ui.value)
+        }
+    });
+
+    $( "#intake-slider" ).slider({
+        min: 0,
+        max: 1,
+        step: .05,
+        value: 0,
+        change: function( event, ui ) {
+            console.log('see intake: '+ui.value)
+            NetworkTables.putValue("/SmartDashboard/intakeSpeed",ui.value)
+            $("#intakeReal").text(ui.value)
+        }
+    });
+    $( "#shooter-slider" ).slider({
+        min: 0,
+        max: 1,
+        step: .01,
+        value: 0,
+        change: function( event, ui ) {
+            console.log('see shooter: '+ui.value)
+            NetworkTables.putValue("/SmartDashboard/shooterSpeed",ui.value)
+            $("#shooterReal").text(ui.value)
+        }
+    });
+
+
 
     $( "#accordion" ).accordion();
 
