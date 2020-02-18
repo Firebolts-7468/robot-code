@@ -1,10 +1,16 @@
 //to run this use 
 // python3 -m pynetworktables2js --team 7468
 
+var defaultOnce = true;
 
 function onRobotConnection(connected) {
     $('#robotstate').text(connected ? "Connected!" : "Disconnected");
     $('#robotAddress').text(connected ? NetworkTables.getRobotAddress() : "disconnected");
+    if(connected && defaultOnce){
+        $( "#load-defaults" ).click();
+        defaultOnce = false;
+    }
+   
 }
 
 $(document).ready(function(){
@@ -23,9 +29,9 @@ $(document).ready(function(){
             console.log('we see it!')
             console.log(value)
         }else if(key=="/limelight/tx"){
-            $("#limeTX").text(value)
+            $("#limeTX").text(value.toFixed(2))
         }else if(key=="/limelight/ty"){
-            $("#limeTY").text(value)
+            $("#limeTY").text(value.toFixed(2))
         }
 
         else{
@@ -37,75 +43,89 @@ $(document).ready(function(){
     $( "#load-defaults" ).button();
     $( "#load-defaults" ).click(function( event ) {
         console.log('loading defaults');
-        $( "#xRatio-slider" ).trigger("change");
-        NetworkTables.putValue("/SmartDashboard/xRatio",$("#xRatio-slider").slider("option","value"));
-        NetworkTables.putValue("/SmartDashboard/yRatio",$("#yRatio-slider").slider("option","value"));
-        NetworkTables.putValue("/SmartDashboard/spinRatio",$("#spinRatio-slider").slider("option","value"));
 
-        NetworkTables.putValue("/SmartDashboard/steeringTrim",$("#spinRatio-slider").slider("option","value"));
+        $( "#xScale-slider" ).slider('value', 0);
+        $( "#yScale-slider" ).slider('value', 0);
+        $( "#spinScale-slider" ).slider('value',0);
+        $( "#trim-slider" ).slider('value',-.005);
 
-        NetworkTables.putValue("/SmartDashboard/indexerSpeed",$("#indexer-slider").slider("option","value"));
-        NetworkTables.putValue("/SmartDashboard/intakeSpeed",$("#intake-slider").slider("option","value"));
-        NetworkTables.putValue("/SmartDashboard/shooterSpeed",$("#shooter-slider").slider("option","value"));
+        $( "#intake-slider" ).slider('value',0);
+        $( "#indexer-slider" ).slider('value',0);
+        $( "#shooter-slider" ).slider('value',0);
 
-        $("#xRatioReal").text($("#xRatio-slider").slider("option","value"));
-        $("#yRatioReal").text($("#yRatio-slider").slider("option","value"));
-        $("#spinRatioReal").text($("#spinRatio-slider").slider("option","value"));
-        $("#trimReal").text($("#trim-slider").slider("option","value"));
-        $("#indexerReal").text($("#indexer-slider").slider("option","value"));
-        $("#intakeReal").text($("#intake-slider").slider("option","value"));
-        $("#shooterReal").text($("#shooter-slider").slider("option","value"));
+        $( "#visionP-slider" ).slider('value',0.05);
+
+        
+        $("#intake-off").prop("checked",true).change();
+        $("#indexer-off").prop("checked",true).change();
+        $("#shooter-off").prop("checked",true).change();
 
 
     });
 
+    $( "#drive-beginner" ).button();
+    $( "#drive-beginner" ).click(function( event ) {
+        console.log('loading defaults');
+        $( "#xScale-slider" ).slider('value',.25);
+        $( "#yScale-slider" ).slider('value',.2);
+        $( "#spinScale-slider" ).slider('value',.2);
+    });
 
-    $( "#intake-control" ).controlgroup();
-    $( "#indexer-control" ).controlgroup();
-    $( "#shooter-control" ).controlgroup();
+    $( "#drive-advanced" ).button();
+    $( "#drive-advanced" ).click(function( event ) {
+        console.log('loading defaults');
+        $( "#xScale-slider" ).slider('value',.5);
+        $( "#yScale-slider" ).slider('value',.3);
+        $( "#spinScale-slider" ).slider('value',.3);
+    });
+
+
+    $( "#drive-control" ).controlgroup();
+    $( "#balls-control" ).controlgroup();
+    $( "#vision-control" ).controlgroup();
 
 
 
-    $( "#xRatio-slider" ).slider({
-        min: 1,
-        max: 6,
-        step: .2,
-        value: 3,
+    $( "#xScale-slider" ).slider({
+        min: 0,
+        max: 1,
+        step: .05,
+        value: 0,
         change: function( event, ui ) {
             console.log('see xslider: '+ui.value)
-            NetworkTables.putValue("/SmartDashboard/xRatio",ui.value)
-            $("#xRatioReal").text(ui.value)
+            NetworkTables.putValue("/SmartDashboard/xScale",ui.value)
+            $("#xScaleReal").text(parseInt(100*ui.value)+"%")
         }
     });
-    $( "#yRatio-slider" ).slider({
-        min: 1,
-        max: 6,
-        step: .2,
-        value: 4,
+    $( "#yScale-slider" ).slider({
+        min: 0,
+        max: 1,
+        step: .05,
+        value: 0,
         change: function( event, ui ) {
             console.log('see yslider: '+ui.value)
-            NetworkTables.putValue("/SmartDashboard/yRatio",ui.value)
-            $("#yRatioReal").text(ui.value)
+            NetworkTables.putValue("/SmartDashboard/yScale",ui.value)
+            $("#yScaleReal").text(parseInt(100*ui.value)+"%")
         }
     });
-    $( "#spinRatio-slider" ).slider({
-        min: 1,
-        max: 6,
-        step: .2,
-        value: 3,
+    $( "#spinScale-slider" ).slider({
+        min: 0,
+        max: 1,
+        step: .05,
+        value: 0,
         change: function( event, ui ) {
             console.log('see yslider: '+ui.value)
-            NetworkTables.putValue("/SmartDashboard/spinRatio",ui.value)
-            $("#spinRatioReal").text(ui.value)
+            NetworkTables.putValue("/SmartDashboard/spinScale",ui.value)
+            $("#spinScaleReal").text(parseInt(100*ui.value)+"%")
         }
     });
     $( "#trim-slider" ).slider({
-        min: -.3,
-        max: .3,
-        step: .05,
-        value: -.05,
+        min: -.015,
+        max: .015,
+        step: .001,
+        value: -.005,
         change: function( event, ui ) {
-            console.log('see yslider: '+ui.value)
+            console.log('see trimslider: '+ui.value)
             NetworkTables.putValue("/SmartDashboard/steeringTrim",ui.value)
             $("#trimReal").text(ui.value)
         }
@@ -119,7 +139,7 @@ $(document).ready(function(){
         change: function( event, ui ) {
             console.log('see indexer: '+ui.value)
             NetworkTables.putValue("/SmartDashboard/indexerSpeed",ui.value)
-            $("#indexerReal").text(ui.value)
+            $("#indexerReal").text(parseInt(100*ui.value)+"%")
         }
     });
 
@@ -131,7 +151,7 @@ $(document).ready(function(){
         change: function( event, ui ) {
             console.log('see intake: '+ui.value)
             NetworkTables.putValue("/SmartDashboard/intakeSpeed",ui.value)
-            $("#intakeReal").text(ui.value)
+            $("#intakeReal").text(parseInt(100*ui.value)+"%")
         }
     });
     $( "#shooter-slider" ).slider({
@@ -142,9 +162,48 @@ $(document).ready(function(){
         change: function( event, ui ) {
             console.log('see shooter: '+ui.value)
             NetworkTables.putValue("/SmartDashboard/shooterSpeed",ui.value)
-            $("#shooterReal").text(ui.value)
+            $("#shooterReal").text(parseInt(100*ui.value)+"%")
         }
     });
+
+    $( "#visionP-slider" ).slider({
+        min: .02,
+        max: .1,
+        step: .005,
+        value: .05,
+        change: function( event, ui ) {
+            console.log('see visionP: '+ui.value)
+            NetworkTables.putValue("/SmartDashboard/visionP",ui.value)
+            $("#visionPReal").text(ui.value)
+        }
+    });
+
+
+
+    $( "#intake-radioset" ).buttonset();
+    $( "#indexer-radioset" ).buttonset();
+    $( "#shooter-radioset" ).buttonset();
+
+
+    $('#intake-radioset input').on('change', function() {
+       var temp = $('input:checked', '#intake-radioset').attr('id');
+       NetworkTables.putValue("/SmartDashboard/intakeState",temp.split('-')[1])
+       console.log("sending "+ temp.split('-')[1])
+    });
+
+    $('#indexer-radioset input').on('change', function() {
+       var temp = $('input:checked', '#indexer-radioset').attr('id');
+       NetworkTables.putValue("/SmartDashboard/indexerState",temp.split('-')[1])
+    });
+
+    $('#shooter-radioset input').on('change', function() {
+       var temp = $('input:checked', '#shooter-radioset').attr('id');
+       NetworkTables.putValue("/SmartDashboard/shooterState",temp.split('-')[1])
+    });
+
+
+
+
 
 
 
@@ -190,7 +249,7 @@ $(document).ready(function(){
 
 
 
-    $( "#radioset" ).buttonset();
+
 
 
 

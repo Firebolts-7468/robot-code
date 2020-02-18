@@ -6,7 +6,7 @@
 	<link rel = "icon" type = "image/png" href = "/images/icon.png">
 	<link href="css/jquery-ui.css" rel="stylesheet">
 	<link href="css/main.css" rel="stylesheet">
-
+ 
 
 	<!-- This starts the NetworkTables websocket, it can be accessed from multiple
 	     pages simultaneously -->
@@ -41,26 +41,72 @@
 
 <button id="load-defaults">Load Defaults</button>
 <!-- Intake -->
-<h2 class="demoHeaders">Subsystems</h2>
-<fieldset style = "width: 400px;">
+<h2 class="demoHeaders">Command</h2>
+<fieldset style = "width: 700px;">
 	<legend>Drive</legend>
 	<div id="drive-control">
-		<span>Turn speed - </span><span id="xRatioReal"></span><div id="xRatio-slider"></div>
-		<span>Forward Speed - </span><span id="yRatioReal"></span><div id="yRatio-slider"></div>
-		<span>Spin Speed - </span><span id="spinRatioReal"></span><div id="spinRatio-slider"></div>
-		<span>Trim - </span><span id="trimReal"></span><div id="trim-slider"></div>
-
-		<span>Intake - </span><span id="intakeReal"></span><div id="intake-slider"></div>
-		<span>Indexer - </span><span id="indexerReal"></span><div id="indexer-slider"></div>
-		<span>Shooter - </span><span id="shooterReal"></span><div id="shooter-slider"></div>
-
-
-
+		<button id="drive-beginner">Beginner</button>
+		<button id="drive-advanced">Advanced</button></br></br>
+		<span class="propname">Turn speed - </span><span class="real" id="xScaleReal"></span><div id="xScale-slider" class="mySlider"></div></br>
+		<span class="propname">Forward Speed - </span><span class="real" id="yScaleReal"></span><div id="yScale-slider" class="mySlider"></div></br>
+		<span class="propname">Spin Speed - </span><span class="real" id="spinScaleReal"></span><div id="spinScale-slider" class="mySlider"></div></br>
+		<span class="propname">Trim - </span><span class="real" id="trimReal"></span><div id="trim-slider" class="mySlider"></div>
 	</div>
 </fieldset>
 
-<span id="limeTX"></span>
-<span id="limeTY"></span>
+<fieldset style = "width: 700px;">
+	<legend>Balls</legend>
+	<div id="balls-control">
+		<fieldset class= "noBorder">
+			<span class="propname">Intake - </span><span class="real" id="intakeReal"></span>
+			<div id="intake-radioset">
+				<input type="radio" id="intake-off" name="intake-radio" checked="checked"><label for="intake-off">off</label>
+				<input type="radio" id="intake-on" name="intake-radio" ><label for="intake-on">On</label>
+			</div>
+			<div id="intake-slider" class="mySlider" ></div>
+		</fieldset>
+
+		<fieldset class= "noBorder">
+			<span class="propname">Indexer - </span><span class="real" id="indexerReal"></span>
+			<div id="indexer-radioset">
+				<input type="radio" id="indexer-off" name="indexer-radio" checked="checked"><label for="indexer-off">off</label>
+				<input type="radio" id="indexer-on" name="indexer-radio" ><label for="indexer-on">On</label>
+			</div>
+			<div id="indexer-slider" class="mySlider" ></div>
+		</fieldset>
+
+		<fieldset class= "noBorder">
+			<span class="propname">Shooter - </span><span class="real" id="shooterReal"></span>
+			<div id="shooter-radioset">
+				<input type="radio" id="shooter-off" name="shooter-radio" checked="checked"><label for="shooter-off">off</label>
+				<input type="radio" id="shooter-on" name="shooter-radio" ><label for="shooter-on">On</label>
+			</div>
+			<div id="shooter-slider" class="mySlider" ></div>
+		</fieldset>
+	</div>
+</fieldset>
+
+<fieldset style = "width: 700px;">
+	<legend>Vision</legend>
+	<div id="vision-control">
+		<span>Vision P - </span><span class="real" id="visionPReal"></span><div id="visionP-slider" class="mySlider"></div></br>
+		<span>X error: </span><span id="limeTX"></span></br>
+		<span>Y error: </span><span id="limeTY"></span>
+	</div>
+</fieldset>
+
+<h2 class="demoHeaders">Robot Buttons</h2>
+<div class="ui-widget">
+	<p>
+		<b>Left Stick</b> Robot forward and backward.</br>
+		<b>Right Stick</b> Steering, only when robot is moving.</br>
+		<b>Left/Right Trigger</b> Spin in place left and right.</br>
+		<b>A Button</b> Aim the robot usin the camera.</br>
+
+
+
+	</p>
+</div>
 
 
 
@@ -70,7 +116,7 @@
 		<select id="intake-mode">
 			<option>Controller</option>
 			<option>Force On</option>
-			<option>Force Off</option>
+			<option>Force off</option>
 		</select>
 		<label for="intake-dir-forward">Forward</label>
 		<input type="radio" name="intake-dir" id="intake-dir-forward">
@@ -86,7 +132,7 @@
 		<select id="indexer-mode">
 			<option>Controller</option>
 			<option>Force On</option>
-			<option>Force Off</option>
+			<option>Force off</option>
 		</select>
 		<label for="indexer-dir-forward">Forward</label>
 		<input type="radio" name="indexer-dir" id="indexer-dir-forward">
@@ -102,7 +148,7 @@
 		<select id="shooter-mode">
 			<option>Controller</option>
 			<option>Force On</option>
-			<option>Force Off</option>
+			<option>Force off</option>
 		</select>
 		<label for="shooter-dir-forward">Forward</label>
 		<input type="radio" name="shooter-dir" id="shooter-dir-forward">

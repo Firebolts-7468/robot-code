@@ -40,3 +40,21 @@ select {
 	width: 200px;
 }
 
+.mySlider{
+	display: inline-block;
+    width: 300px;
+    margin-left: 40px;
+}
+
+.noBorder{
+	border: none ;
+}
+.propname{
+	display: inline-block;
+	width: 120px;
+}
+
+.real{
+	display: inline-block;
+	width: 40px;
+}

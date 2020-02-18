@@ -23,11 +23,9 @@ class MyRobot(wpilib.TimedRobot):
 
 
         self.shooterSpeed = 0
-        self.leftbusyBump = False
-        self.rightbusyBump = False
-        self.busyTrig = False
 
-        #self.canFalcon = wpilib.
+
+
 
 
         self.leftMotors = wpilib.Talon(0)
@@ -51,20 +49,12 @@ class MyRobot(wpilib.TimedRobot):
         self.intakeOn = False
         self.prevValue = False
        
-        self.sd.putNumber("Mytest",45)
-
-
-       
 
         self.cycleCount = 0
 
 
         self.joystick = wpilib.XboxController(0)
 
-
-
-
-        
 
     def disabledPeriodic(self):
         pass
@@ -90,45 +80,72 @@ class MyRobot(wpilib.TimedRobot):
         self.cycleCount+=1
 
 
-        #first, let's decide on how fast to go
-        xRatio = self.sd.getNumber("xRatio",3)
-        yRatio = self.sd.getNumber("yRatio",3)
-        spinRatio = self.sd.getNumber("spinRatio",3)
-        steeringTrim = self.sd.getNumber("steeringTrim",0)
+        #first, let's get some inofrmation from our control station, we default to not moving
+        xScale = self.sd.getNumber("xScale",0)
+        yScale = self.sd.getNumber("yScale",0)
+        spinScale = self.sd.getNumber("spinScale",0)
+        steeringTrim = self.sd.getNumber("steeringTrim",-0.005)
         
         intakeSpeed = self.sd.getNumber("intakeSpeed",0)
         indexerSpeed = self.sd.getNumber("indexerSpeed",0)
         shooterSpeed = self.sd.getNumber("shooterSpeed",0)
 
+        intakeState = self.sd.getNumber("intakeState","off")
+        indexerState = self.sd.getNumber("indexerState","off")
+        shooterState = self.sd.getNumber("shooterState","off")
+
+        
+
+        visionP = self.sd.getNumber("visionP",0)
+
+
+        #here we get the current aiming of the vision system 
         limeTx = self.lime.getNumber("tx",0)
         limeTy = self.lime.getNumber("ty",0)
 
-        if self.cycleCount%20==0:
-            print(str(xRatio)+' '+str(yRatio)+' '+str(shooterSpeed))
+        if self.cycleCount%200==0:
+            print(str(xScale)+' '+str(yScale)+' '+str(shooterSpeed))
 
 
         #get values from joystick
         yvalue =  -self.joystick.getY(wi.GenericHID.Hand.kLeftHand)
         xvalue =  self.joystick.getX(wi.GenericHID.Hand.kRightHand)
-
-        #self.drive.arcadeDrive(yvalue/joystickYratio, xvalue/joystickXratio, squareInputs=True)
-        
-
         leftTrigger = self.joystick.getTriggerAxis(wi.GenericHID.Hand.kLeftHand)
         rightTrigger = self.joystick.getTriggerAxis(wi.GenericHID.Hand.kRightHand)
+        
+    
+        
 
         if leftTrigger > .1 or rightTrigger >.1:
-            self.drive.curvatureDrive(yvalue/yRatio, (-leftTrigger+rightTrigger)/spinRatio, True)
+            self.drive.curvatureDrive(yvalue/yScale, (-leftTrigger+rightTrigger)*spinScale+steeringTrim, True)
         elif self.joystick.getAButton():
             if limeTx>5: limeTx=5
-            self.drive.curvatureDrive(0, limeTx/(5*spinRatio), True)
+            if limeTx<-5: limeTx=-5
+            self.drive.curvatureDrive(0, limeTx*visionP, True)
         else:
-            self.drive.curvatureDrive(yvalue/yRatio, xvalue/xRatio+steeringTrim/30, False)
+            self.drive.curvatureDrive(yvalue/yScale, xvalue/xScale+steeringTrim, False)
         
 
 
+        if intakeState == "on": 
+            self.intakeMotor.set(intakeSpeed)
+        else:
+            self.intakeMotor.set(0)
 
-        #print(yvalue/joystickYratio)
+        if indexerState == "on": 
+            self.indexerMotor.set(indexerSpeed)
+        else:
+            self.indexerMotor.set(0)
+
+        if shooterState == "on": 
+            self.shooterMotor.set(shooterSpeed)
+        else:
+            self.shooterMotor.set(0)
+
+
+        #self.drive.arcadeDrive(yvalue/joystickYScale, xvalue/joystickXScale, squareInputs=True)
+
+        #print(yvalue/joystickYScale)
         
         #now, let's send info our driver control station 
 
@@ -154,8 +171,8 @@ class MyRobot(wpilib.TimedRobot):
 
 
 
-        #self.sd.putNumber("joystickXratio",joystickXratio)
-        #self.sd.putNumber("joystickYratio",joystickYratio)
+        #self.sd.putNumber("joystickXScale",joystickXScale)
+        #self.sd.putNumber("joystickYScale",joystickYScale)
         #self.sd.putNumber("shooterSpeed",shooterSpeed)
 
         #here, let's deal with the indexer
@@ -211,9 +228,7 @@ class MyRobot(wpilib.TimedRobot):
 
 
         
-        self.intakeMotor.set(intakeSpeed)
-        self.shooterMotor.set(shooterSpeed)
-        self.indexerMotor.set(indexerSpeed)
+  
        
 
 
