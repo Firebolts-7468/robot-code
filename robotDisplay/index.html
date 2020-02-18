@@ -42,7 +42,7 @@
 <button id="load-defaults">Load Defaults</button>
 <!-- Intake -->
 <h2 class="demoHeaders">Command</h2>
-<fieldset style = "width: 700px;">
+<fieldset style = "width: 850px;">
 	<legend>Drive</legend>
 	<div id="drive-control">
 		<button id="drive-beginner">Beginner</button>
@@ -54,7 +54,7 @@
 	</div>
 </fieldset>
 
-<fieldset style = "width: 700px;">
+<fieldset style = "width: 850px;">
 	<legend>Balls</legend>
 	<div id="balls-control">
 		<fieldset class= "noBorder">
@@ -62,6 +62,7 @@
 			<div id="intake-radioset">
 				<input type="radio" id="intake-off" name="intake-radio" checked="checked"><label for="intake-off">off</label>
 				<input type="radio" id="intake-on" name="intake-radio" ><label for="intake-on">On</label>
+				<input type="radio" id="intake-controller" name="intake-radio" ><label for="intake-controller">Controller</label>
 			</div>
 			<div id="intake-slider" class="mySlider" ></div>
 		</fieldset>
@@ -71,6 +72,7 @@
 			<div id="indexer-radioset">
 				<input type="radio" id="indexer-off" name="indexer-radio" checked="checked"><label for="indexer-off">off</label>
 				<input type="radio" id="indexer-on" name="indexer-radio" ><label for="indexer-on">On</label>
+				<input type="radio" id="indexer-controller" name="indexer-radio" ><label for="indexer-controller">Controller</label>
 			</div>
 			<div id="indexer-slider" class="mySlider" ></div>
 		</fieldset>
@@ -80,13 +82,14 @@
 			<div id="shooter-radioset">
 				<input type="radio" id="shooter-off" name="shooter-radio" checked="checked"><label for="shooter-off">off</label>
 				<input type="radio" id="shooter-on" name="shooter-radio" ><label for="shooter-on">On</label>
+				<input type="radio" id="shooter-controller" name="shooter-radio" ><label for="shooter-controller">Controller</label>
 			</div>
 			<div id="shooter-slider" class="mySlider" ></div>
 		</fieldset>
 	</div>
 </fieldset>
 
-<fieldset style = "width: 700px;">
+<fieldset style = "width: 850px;">
 	<legend>Vision</legend>
 	<div id="vision-control">
 		<span>Vision P - </span><span class="real" id="visionPReal"></span><div id="visionP-slider" class="mySlider"></div></br>
@@ -101,7 +104,10 @@
 		<b>Left Stick</b> Robot forward and backward.</br>
 		<b>Right Stick</b> Steering, only when robot is moving.</br>
 		<b>Left/Right Trigger</b> Spin in place left and right.</br>
-		<b>A Button</b> Aim the robot usin the camera.</br>
+		<b>A Button</b> Press and hold to aim the robot using the camera.</br>
+		<b>X Button</b> Tap to toggle indexer on and off (in controller mode).</br>
+		<b>Y Button</b> Tap to toggle intake on and off (in controller mode).</br>
+		<b>B Button</b> Tap to toggle shooter on and off (in controller mode).</br>
 
 
 
