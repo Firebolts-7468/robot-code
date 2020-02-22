@@ -48,6 +48,7 @@ $(document).ready(function(){
         $( "#yScale-slider" ).slider('value', 0);
         $( "#spinScale-slider" ).slider('value',0);
         $( "#trim-slider" ).slider('value',-.005);
+        $( "#climb-slider" ).slider('value',0);
 
         $( "#intake-slider" ).slider('value',0);
         $( "#indexer-slider" ).slider('value',0);
@@ -66,7 +67,7 @@ $(document).ready(function(){
     $( "#drive-beginner" ).button();
     $( "#drive-beginner" ).click(function( event ) {
         console.log('loading defaults');
-        $( "#xScale-slider" ).slider('value',.25);
+        $( "#xScale-slider" ).slider('value',.5);
         $( "#yScale-slider" ).slider('value',.2);
         $( "#spinScale-slider" ).slider('value',.2);
     });
@@ -75,8 +76,8 @@ $(document).ready(function(){
     $( "#drive-advanced" ).click(function( event ) {
         console.log('loading defaults');
         $( "#xScale-slider" ).slider('value',.5);
-        $( "#yScale-slider" ).slider('value',.3);
-        $( "#spinScale-slider" ).slider('value',.3);
+        $( "#yScale-slider" ).slider('value',.4);
+        $( "#spinScale-slider" ).slider('value',.25);
     });
 
 
@@ -119,6 +120,18 @@ $(document).ready(function(){
             $("#spinScaleReal").text(parseInt(100*ui.value)+"%")
         }
     });
+    $( "#climb-slider" ).slider({
+        min: 0,
+        max: 1,
+        step: .05,
+        value: 0,
+        change: function( event, ui ) {
+            console.log('see climb: '+ui.value)
+            NetworkTables.putValue("/SmartDashboard/climbScale",ui.value)
+            $("#climbReal").text(parseInt(100*ui.value)+"%")
+        }
+    });
+
     $( "#trim-slider" ).slider({
         min: -.015,
         max: .015,
@@ -183,6 +196,7 @@ $(document).ready(function(){
     $( "#intake-radioset" ).buttonset();
     $( "#indexer-radioset" ).buttonset();
     $( "#shooter-radioset" ).buttonset();
+    $( "#climb-radioset" ).buttonset();
 
 
     $('#intake-radioset input').on('change', function() {
@@ -201,7 +215,10 @@ $(document).ready(function(){
        NetworkTables.putValue("/SmartDashboard/shooterState",temp.split('-')[1])
     });
 
-
+    $('#climb-radioset input').on('change', function() {
+       var temp = $('input:checked', '#climb-radioset').attr('id');
+       NetworkTables.putValue("/SmartDashboard/climbState",temp.split('-')[1])
+    });
 
 
 

@@ -50,7 +50,7 @@
 		<span class="propname">Turn speed - </span><span class="real" id="xScaleReal"></span><div id="xScale-slider" class="mySlider"></div></br>
 		<span class="propname">Forward Speed - </span><span class="real" id="yScaleReal"></span><div id="yScale-slider" class="mySlider"></div></br>
 		<span class="propname">Spin Speed - </span><span class="real" id="spinScaleReal"></span><div id="spinScale-slider" class="mySlider"></div></br>
-		<span class="propname">Trim - </span><span class="real" id="trimReal"></span><div id="trim-slider" class="mySlider"></div>
+		<span class="propname">Trim - </span><span class="real" id="trimReal"></span><div id="trim-slider" class="mySlider"></div></br>
 	</div>
 </fieldset>
 
@@ -86,6 +86,16 @@
 			</div>
 			<div id="shooter-slider" class="mySlider" ></div>
 		</fieldset>
+
+		<fieldset class= "noBorder">
+			<span class="propname">Climb - </span><span class="real" id="climbReal"></span>
+			<div id="climb-radioset">
+				<input type="radio" id="climb-normal" name="climb-radio" checked="checked"><label for="climb-normal">Normal</label>
+				<input type="radio" id="climb-retract" name="climb-radio" ><label for="climb-retract">Retract</label>
+			</div>
+			<div id="climb-slider" class="mySlider" ></div>
+		</fieldset>
+
 	</div>
 </fieldset>
 
@@ -104,10 +114,15 @@
 		<b>Left Stick</b> Robot forward and backward.</br>
 		<b>Right Stick</b> Steering, only when robot is moving.</br>
 		<b>Left/Right Trigger</b> Spin in place left and right.</br>
+
 		<b>A Button</b> Press and hold to aim the robot using the camera.</br>
-		<b>X Button</b> Tap to toggle indexer on and off (in controller mode).</br>
+		<b>X Button</b> Tap once to turn on shooter, tap again to run indexer for 1 sec.</br>
 		<b>Y Button</b> Tap to toggle intake on and off (in controller mode).</br>
-		<b>B Button</b> Tap to toggle shooter on and off (in controller mode).</br>
+		<b>B Button</b> Tap to turn shooter off (in controller mode).</br>
+
+		<b>Left Bumper</b> Hold to release left climb, then pull it back in.</br>
+		<b>Right Bumper</b> Hold to release right climb, then pull it back in.</br>
+
 
 
 

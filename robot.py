@@ -34,6 +34,9 @@ class MyRobot(wpilib.TimedRobot):
         self.indexerMotor = wpilib.Talon(5)
         self.intakeMotor = wpilib.Talon(6)
 
+        self.leftClimb = wpilib.Talon(7)
+        self.rightClimb = wpilib.Talon(8)
+
 
         #Set up the drivetrain motors. 
         self.drive = wpilib.drive.DifferentialDrive(self.leftMotors, self.rightMotors)
@@ -45,6 +48,10 @@ class MyRobot(wpilib.TimedRobot):
         self.cycleCount = 0
 
         self.joystick = wpilib.XboxController(0)
+
+        self.indexerTimer = wpilib.Timer()
+
+        self.indexerTimer.start()
 
 
     def disabledPeriodic(self):
@@ -69,15 +76,17 @@ class MyRobot(wpilib.TimedRobot):
         xScale = self.sd.getNumber("xScale",0)
         yScale = self.sd.getNumber("yScale",0)
         spinScale = self.sd.getNumber("spinScale",0)
+        climbScale = self.sd.getNumber("climbScale",0)
         steeringTrim = self.sd.getNumber("steeringTrim",-0.005)
         
         intakeSpeed = self.sd.getNumber("intakeSpeed",0)
         indexerSpeed = self.sd.getNumber("indexerSpeed",0)
         shooterSpeed = self.sd.getNumber("shooterSpeed",0)
 
-        intakeState = self.sd.getNumber("intakeState","off")
-        indexerState = self.sd.getNumber("indexerState","off")
-        shooterState = self.sd.getNumber("shooterState","off")
+        intakeState = self.sd.getString("intakeState","off")
+        indexerState = self.sd.getString("indexerState","off")
+        shooterState = self.sd.getString("shooterState","off")
+        climbState = self.sd.getString("climbState","normal")
 
         visionP = self.sd.getNumber("visionP",0.025)
 
@@ -122,28 +131,55 @@ class MyRobot(wpilib.TimedRobot):
 
         #toggle indexer on and off
         if self.joystick.getXButtonPressed():
-            self.indexerOn = not self.indexerOn
+            if not self.shooterOn:
+                self.shooterOn = True
+            else:
+                self.indexerOn = True
+                self.indexerTimer.reset()
+
+        if self.indexerOn and self.indexerTimer.hasPeriodPassed(1):
+            self.indexerOn = False
+
+
 
         #toggle shooter on and off
         if self.joystick.getBButtonPressed():
-            self.shooterOn = not self.shooterOn
+            self.shooterOn = False
 
 
         #based on input from control panel, and from joystick, turn stuff on and off
-        if intakeState == "on" or (intakeState == "controller" and intakeOn): 
+        if intakeState == "on" or (intakeState == "controller" and self.intakeOn): 
             self.intakeMotor.set(intakeSpeed)
         else:
             self.intakeMotor.set(0)
 
-        if indexerState == "on" or (indexerState == "controller" and indexerOn): 
+        if indexerState == "on" or (indexerState == "controller" and self.indexerOn): 
             self.indexerMotor.set(indexerSpeed)
         else:
             self.indexerMotor.set(0)
 
-        if shooterState == "on" or (shooterState == "controller" and shooterOn): 
+        if shooterState == "on" or (shooterState == "controller" and self.shooterOn): 
             self.shooterMotor.set(shooterSpeed)
         else:
             self.shooterMotor.set(0)
+
+
+        if self.joystick.getBumper(wi.GenericHID.Hand.kLeftHand):
+            if climbState == 'normal':
+                self.leftClimb.set(climbScale)
+            if climbState == 'retract':
+                self.leftClimb.set(-climbScale)
+        else:
+            self.leftClimb.set(0)
+
+        if self.joystick.getBumper(wi.GenericHID.Hand.kRightHand):
+            if climbState == 'normal':
+                self.rightClimb.set(climbScale)
+            if climbState == 'retract':
+                self.rightClimb.set(-climbScale)
+        else:
+            self.rightClimb.set(0)
+        
 
 
         #self.drive.arcadeDrive(yvalue/joystickYScale, xvalue/joystickXScale, squareInputs=True)
