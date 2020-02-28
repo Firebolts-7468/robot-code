@@ -37,6 +37,9 @@ class MyRobot(wpilib.TimedRobot):
         self.leftClimb = wpilib.Talon(7)
         self.rightClimb = wpilib.Talon(8)
 
+        self.hoodMotor = wpilib.Talon(9)
+        self.hoodSwitch = wpilib.DigitalInput(0)
+
 
         #Set up the drivetrain motors. 
         self.drive = wpilib.drive.DifferentialDrive(self.leftMotors, self.rightMotors)
@@ -44,15 +47,23 @@ class MyRobot(wpilib.TimedRobot):
         self.intakeOn = False
         self.indexerOn = False
         self.shooterOn = False
+        self.hoodOn = False
 
         self.cycleCount = 0
+
+        self.hoodDirection = 'stopped'  #stopped, forward, backward
+        self.currentHoodPos = 0
+        self.hoodSlop = .5
+        self.zeroHood = False
+        self.hoodSpeed = .1
 
         self.joystick = wpilib.XboxController(0)
 
         self.indexerTimer = wpilib.Timer()
-
         self.indexerTimer.start()
 
+        self.hoodTimer = wpilib.Timer()
+        self.hoodTimer.start()
 
     def disabledPeriodic(self):
         pass
@@ -82,13 +93,17 @@ class MyRobot(wpilib.TimedRobot):
         intakeSpeed = self.sd.getNumber("intakeSpeed",0)
         indexerSpeed = self.sd.getNumber("indexerSpeed",0)
         shooterSpeed = self.sd.getNumber("shooterSpeed",0)
+        hoodPosition = self.sd.getNumber("hoodPosition",0)
 
         intakeState = self.sd.getString("intakeState","off")
         indexerState = self.sd.getString("indexerState","off")
         shooterState = self.sd.getString("shooterState","off")
         climbState = self.sd.getString("climbState","normal")
+        hoodState = self.sd.getString("hoodState","off")
 
         visionP = self.sd.getNumber("visionP",0.025)
+        rpmTarget = self.sd.getNumber("rpmTarget",-1)
+        launchAngleTarget = self.sd.getNumber("launchAngleTarget",-1)
 
 
         #here we get the current aiming of the vision system 
@@ -96,8 +111,8 @@ class MyRobot(wpilib.TimedRobot):
         limeTy = self.lime.getNumber("ty",0)
 
         #just print out some stuff for debug
-        if self.cycleCount%200==0:
-            print(str(xScale)+' '+str(yScale)+' '+str(shooterSpeed))
+        #if self.cycleCount%200==0:
+        #    print(str(xScale)+' '+str(yScale)+' '+str(shooterSpeed))
 
 
         #get values from joystick
@@ -112,6 +127,8 @@ class MyRobot(wpilib.TimedRobot):
         # rightTrigger = self.joystick.getTriggerAxis(1)
     
         
+        #####DRIVE#####
+
         #look to see if the user wants to spin
         if leftTrigger > .1 or rightTrigger >.1:
             self.drive.curvatureDrive(yvalue*yScale, (-leftTrigger+rightTrigger)*spinScale+steeringTrim, True)
@@ -125,6 +142,50 @@ class MyRobot(wpilib.TimedRobot):
             self.drive.curvatureDrive(yvalue*yScale, xvalue*xScale+steeringTrim, False)
         
 
+
+
+        #####HOOD#####
+
+        #If the hood is moving, we need to update its position
+        if self.hoodDirection == 'forward':
+            self.currentHoodPos += self.hoodSpeed*self.hoodTimer.get()
+        elif self.hoodDirection == 'backward':
+            self.currentHoodPos -= self.hoodSpeed*self.hoodTimer.get()
+        self.hoodTimer.reset()
+
+
+        if hoodState == 'on' or hoodState == 'auto':
+            if self.hoodOn == False:
+                if self.hoodSwitch.get() == False:
+                    self.hoodDirection = 'backward'
+                    self.hoodMotor.set(-self.hoodSpeed)
+            else:
+                if self.currentHoodPos < hoodPosition-self.hoodSlop:
+                    #drive the hood forward
+                    self.hoodDirection = 'forward'
+                    self.hoodMotor.set(self.hoodSpeed)
+                elif self.currentHoodPos > hoodPosition+self.hoodSlop:
+                    #drive the hood forward
+                    self.hoodDirection = 'backward'
+                    self.hoodMotor.set(-self.hoodSpeed)
+                else:
+                    self.hoodDirection = 'stopped'
+                    self.hoodMotor.set(0)
+        else:
+            self.hoodMotor.set(0)
+
+        #last, take care of a limit switch
+        if self.hoodSwitch.get():
+            #means the switch is pressed
+            self.hoodDirection = 'stopped'
+            self.currentHoodPos = 0
+
+            
+
+
+
+        #####BUTTONS#####
+
         #toggle intake using Y button
         if self.joystick.getYButtonPressed():
             self.intakeOn = not self.intakeOn
@@ -133,6 +194,7 @@ class MyRobot(wpilib.TimedRobot):
         if self.joystick.getXButtonPressed():
             if not self.shooterOn:
                 self.shooterOn = True
+                self.hoodOn = True
             else:
                 self.indexerOn = True
                 self.indexerTimer.reset()
@@ -140,12 +202,16 @@ class MyRobot(wpilib.TimedRobot):
         if self.indexerOn and self.indexerTimer.hasPeriodPassed(1):
             self.indexerOn = False
 
-
-
         #toggle shooter on and off
         if self.joystick.getBButtonPressed():
+            #turn off shooter
             self.shooterOn = False
+            #return hood
+            self.hoodOn = False
 
+
+
+        #####SUB SYSTEM CONTROL########
 
         #based on input from control panel, and from joystick, turn stuff on and off
         if intakeState == "on" or (intakeState == "controller" and self.intakeOn): 
@@ -158,11 +224,13 @@ class MyRobot(wpilib.TimedRobot):
         else:
             self.indexerMotor.set(0)
 
-        if shooterState == "on" or (shooterState == "controller" and self.shooterOn): 
+        if shooterState == "on" or (shooterState == "controller" and self.shooterOn) or (shooterState == "auto" and self.shooterOn): 
             self.shooterMotor.set(shooterSpeed)
         else:
             self.shooterMotor.set(0)
 
+
+        #####CLIMB######
 
         if self.joystick.getBumper(wi.GenericHID.Hand.kLeftHand):
             if climbState == 'normal':

@@ -2,6 +2,11 @@ body{
 	font-family: "Trebuchet MS", sans-serif;
 	margin: 50px;
 }
+
+.topFieldset{
+	width: 900px;
+}
+
 .demoHeaders {
 	margin-top: 2em;
 }
@@ -57,4 +62,27 @@ select {
 .real{
 	display: inline-block;
 	width: 40px;
+}
+
+.calibrations {
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+  border-collapse: collapse;
+  width: 60%;
+}
+
+.calibrations td, .calibrations th {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.calibrations tr:nth-child(even){background-color: #f2f2f2;}
+
+.calibrations tr:hover {background-color: #ddd;}
+
+.calibrations th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #007fff;
+  color: white;
 }

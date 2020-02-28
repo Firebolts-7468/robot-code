@@ -42,7 +42,7 @@
 <button id="load-defaults">Load Defaults</button>
 <!-- Intake -->
 <h2 class="demoHeaders">Command</h2>
-<fieldset style = "width: 850px;">
+<fieldset class="topFieldset">
 	<legend>Drive</legend>
 	<div id="drive-control">
 		<button id="drive-beginner">Beginner</button>
@@ -54,7 +54,7 @@
 	</div>
 </fieldset>
 
-<fieldset style = "width: 850px;">
+<fieldset class="topFieldset">
 	<legend>Balls</legend>
 	<div id="balls-control">
 		<fieldset class= "noBorder">
@@ -83,8 +83,19 @@
 				<input type="radio" id="shooter-off" name="shooter-radio" checked="checked"><label for="shooter-off">off</label>
 				<input type="radio" id="shooter-on" name="shooter-radio" ><label for="shooter-on">On</label>
 				<input type="radio" id="shooter-controller" name="shooter-radio" ><label for="shooter-controller">Controller</label>
+				<input type="radio" id="shooter-auto" name="shooter-radio" ><label for="shooter-auto">Auto</label>
 			</div>
 			<div id="shooter-slider" class="mySlider" ></div>
+		</fieldset>
+
+		<fieldset class= "noBorder">
+			<span class="propname">Hood - </span><span class="real" id="hoodReal"></span>
+			<div id="hood-radioset">
+				<input type="radio" id="hood-off" name="hood-radio" checked="checked"><label for="hood-off">off</label>
+				<input type="radio" id="hood-on" name="hood-radio" ><label for="hood-on">On</label>
+				<input type="radio" id="hood-auto" name="hood-radio" ><label for="hood-auto">Auto</label>
+			</div>
+			<div id="hood-slider" class="mySlider" ></div>
 		</fieldset>
 
 		<fieldset class= "noBorder">
@@ -99,12 +110,15 @@
 	</div>
 </fieldset>
 
-<fieldset style = "width: 850px;">
+<fieldset class="topFieldset">
 	<legend>Vision</legend>
 	<div id="vision-control">
 		<span>Vision P - </span><span class="real" id="visionPReal"></span><div id="visionP-slider" class="mySlider"></div></br>
 		<span>X error: </span><span id="limeTX"></span></br>
-		<span>Y error: </span><span id="limeTY"></span>
+		<span>Y error: </span><span id="limeTY"></span></br>
+
+		<span>RPM Target: </span><span id="rpmTarget"></span></br>
+		<span>Launch Angle Target: </span><span id="launchAngleTarget"></span>
 	</div>
 </fieldset>
 
@@ -116,9 +130,9 @@
 		<b>Left/Right Trigger</b> Spin in place left and right.</br>
 
 		<b>A Button</b> Press and hold to aim the robot using the camera.</br>
-		<b>X Button</b> Tap once to turn on shooter, tap again to run indexer for 1 sec.</br>
+		<b>X Button</b> Tap once to turn on shooter, and to enable hood (which will move to position based on camera). Tap again to run indexer for 1 sec.</br>
 		<b>Y Button</b> Tap to toggle intake on and off (in controller mode).</br>
-		<b>B Button</b> Tap to turn shooter off (in controller mode).</br>
+		<b>B Button</b> Tap to turn shooter off (in controller mode), will also stow hood.</br>
 
 		<b>Left Bumper</b> Hold to release left climb, then pull it back in.</br>
 		<b>Right Bumper</b> Hold to release right climb, then pull it back in.</br>
@@ -129,6 +143,7 @@
 	</p>
 </div>
 
+<h2 class="demoHeaders">Shooter Calibrations</h2>
 
 
 <!-- <fieldset>
