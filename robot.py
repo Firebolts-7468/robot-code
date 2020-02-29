@@ -24,35 +24,90 @@ else:
     print("Warning: ctre library not imported (ctre only supported on the RoboRIO)")
 
 class MyRobot(wpilib.TimedRobot):
+    def initTalonFX(self, talon,
+        kF=0.3,
+        kP=0.1,
+        kI=0,
+        kD=0,
+        inverted=False,
+        enCurrentLimit=False,
+        statorCurrentLimit=2.0,
+        supplyCurrentLimit=1.0):
+
+        talon.configFactoryDefault()
+        
+        # /* Config neutral deadband to be the smallest possible */
+        talon.configNeutralDeadband(0.001)
+
+        # /* Config sensor used for Primary PID [Velocity] */
+        talon.configSelectedFeedbackSensor(ctre.TalonFXFeedbackDevice.IntegratedSensor, 0, 10)
+
+        talon.setSensorPhase(inverted)
+
+        talon.setInverted(False)
+
+        # /* Config the peak and nominal outputs */
+        talon.configNominalOutputForward(0, 10)
+        talon.configNominalOutputReverse(0, 10)
+        talon.configPeakOutputForward(1, 10)
+        talon.configPeakOutputReverse(-1, 10)
+
+        talon.configAllowableClosedloopError(0, 0, 10);
+
+        # /* Config the Velocity closed loop gains in slot0 */
+        talon.config_kF(0, kF, 10)
+        talon.config_kP(0, kP, 10)
+        talon.config_kI(0, kI, 10)
+        talon.config_kD(0, kD, 10)
+        '''
+        * Configure the current limits that will be used
+          * Stator Current is the current that passes through the motor stators.
+          *  Use stator current limits to limit rotor acceleration/heat production
+          * Supply Current is the current that passes into the controller from the supply
+          *  Use supply current limits to prevent breakers from tripping
+          *
+          *  enabled | Limit(amp) | Trigger Threshold(amp) | Trigger Threshold Time(s)  */
+        '''
+        talon.configStatorCurrentLimit(ctre.StatorCurrentLimitConfiguration(enCurrentLimit, statorCurrentLimit, statorCurrentLimit*1.5, 0.05))
+        talon.configSupplyCurrentLimit(ctre.SupplyCurrentLimitConfiguration(enCurrentLimit, supplyCurrentLimit, supplyCurrentLimit*1.5, 0.05))
+
+    def setShooterHoodPos(self, pos):
+        # pos 0 - 1
+        pos_cmd = pos * self.hoodCtsPerRot / 4.0
+
+        self.shooterHoodCAN.set(mode=ctre.ControlMode.Position, value=pos_cmd)
+
     def robotInit(self):
         """
         This function is called upon program startup and
         should be used for any initialization code.
         """
 
+        # Talon CAN motor init
+        '''
+        Talon closed loop control guide
+        https://phoenix-documentation.readthedocs.io/en/latest/ch16_ClosedLoop.html
+
+        Talon (CTRE) Python API documentation
+        https://robotpy.readthedocs.io/projects/ctre/en/latest/api.html
+
+        Talon example code (Java and C++)
+        https://github.com/CrossTheRoadElec/Phoenix-Examples-Languages
+
+        ## One-time setup for each Talon
+        Use the diagnostics tool in Windows to:
+            1. Update the FW
+            2. Set the ID number
+            3. Write the ID down somewhere (ideally, label the motor)
+            4. Use the Self-Test Snapshot and Plot to make sure the motor works
+        '''
+
         self.shooterCAN = ctre.TalonFX(4)
+        self.initTalonFX(self.shooterCAN)
 
-
-
-        self.shooterCAN.configFactoryDefault()
-        
-        # /* Config neutral deadband to be the smallest possible */
-        self.shooterCAN.configNeutralDeadband(0.001)
-
-        # /* Config sensor used for Primary PID [Velocity] */
-        self.shooterCAN.configSelectedFeedbackSensor(ctre.TalonFXFeedbackDevice.IntegratedSensor, 0, 10)
-
-        # /* Config the peak and nominal outputs */
-        self.shooterCAN.configNominalOutputForward(0, 10)
-        self.shooterCAN.configNominalOutputReverse(0, 10)
-        self.shooterCAN.configPeakOutputForward(1, 10)
-        self.shooterCAN.configPeakOutputReverse(-1, 10)
-
-        # /* Config the Velocity closed loop gains in slot0 */
-        self.shooterCAN.config_kF(0, 0.3, 10)
-        self.shooterCAN.config_kP(0, 0.1, 10)
-        self.shooterCAN.config_kI(0, 0, 10)
-        self.shooterCAN.config_kD(0, 0, 10)
+        self.shooterHoodCAN = ctre.TalonFX(5)
+        self.initTalonFX(self.shooterHoodCAN, kF=0, kP=0.02, kI=0, inverted=True, enCurrentLimit=True)
+        self.shooterHoodCAN.setSelectedSensorPosition(0, 0, 10)
 
         #Get information from network tables
         NetworkTables.initialize()
@@ -93,6 +148,8 @@ class MyRobot(wpilib.TimedRobot):
         self.zeroHood = False
         self.hoodSpeed = .1
 
+        self.hoodCtsPerRot = 2048 * 70.0 # counts per rotation * gear reduction / quadrature?
+
         self.joystick = wpilib.XboxController(0)
 
         self.indexerTimer = wpilib.Timer()
@@ -116,8 +173,10 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def teleopPeriodic(self):
-        self.shooterCAN.set(mode=ctre.ControlMode.Velocity, value=1000)
-        print("Sending motor command")
+        # self.shooterCAN.set(mode=ctre.ControlMode.Velocity, value=1000)
+        self.setShooterHoodPos(0.5)
+        print("err: %s" % self.shooterHoodCAN.getClosedLoopError(0))
+        print("pos: %s" % self.shooterHoodCAN.getSelectedSensorPosition(0))
 
         self.cycleCount+=1
         #first, let's get some inofrmation from our control station, we default to not moving
