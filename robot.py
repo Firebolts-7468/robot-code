@@ -10,7 +10,15 @@ from networktables import NetworkTables
 import wpilib.interfaces as wi
 
 import os
-if os.uname().machine == 'armv71':
+
+print("OS information: %s" % str(os.uname()))
+
+print("OS machine type: %s" % os.uname().machine)
+
+machine = os.uname().machine
+
+if os.uname().machine == 'armv7l':
+    print("Success -- import ctre library")
     import ctre
 else:
     print("Warning: ctre library not imported (ctre only supported on the RoboRIO)")
@@ -21,6 +29,30 @@ class MyRobot(wpilib.TimedRobot):
         This function is called upon program startup and
         should be used for any initialization code.
         """
+
+        self.shooterCAN = ctre.TalonFX(4)
+
+
+
+        self.shooterCAN.configFactoryDefault()
+        
+        # /* Config neutral deadband to be the smallest possible */
+        self.shooterCAN.configNeutralDeadband(0.001)
+
+        # /* Config sensor used for Primary PID [Velocity] */
+        self.shooterCAN.configSelectedFeedbackSensor(ctre.TalonFXFeedbackDevice.IntegratedSensor, 0, 10)
+
+        # /* Config the peak and nominal outputs */
+        self.shooterCAN.configNominalOutputForward(0, 10)
+        self.shooterCAN.configNominalOutputReverse(0, 10)
+        self.shooterCAN.configPeakOutputForward(1, 10)
+        self.shooterCAN.configPeakOutputReverse(-1, 10)
+
+        # /* Config the Velocity closed loop gains in slot0 */
+        self.shooterCAN.config_kF(0, 0.3, 10)
+        self.shooterCAN.config_kP(0, 0.1, 10)
+        self.shooterCAN.config_kI(0, 0, 10)
+        self.shooterCAN.config_kD(0, 0, 10)
 
         #Get information from network tables
         NetworkTables.initialize()
@@ -84,7 +116,8 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def teleopPeriodic(self):
-        
+        self.shooterCAN.set(mode=ctre.ControlMode.Velocity, value=1000)
+        print("Sending motor command")
 
         self.cycleCount+=1
         #first, let's get some inofrmation from our control station, we default to not moving
