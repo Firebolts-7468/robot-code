@@ -100,6 +100,11 @@ class MyRobot(wpilib.TimedRobot):
             2. Set the ID number
             3. Write the ID down somewhere (ideally, label the motor)
             4. Use the Self-Test Snapshot and Plot to make sure the motor works
+
+        NOTE: MOTOR POSITION CONTROL IS EXTREMELY DANGEROUS RIGHT NOW
+            NEVER USE POSITION CONTROL WITHOUT CURRENT LIMIT
+            NEVER USE POSITION CONTROL WITHOUT SUPERVISION + E-STOP READINESS
+            Look into limit switches for motor auto-shutoff
         '''
 
         self.shooterCAN = ctre.TalonFX(4)
