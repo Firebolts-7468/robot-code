@@ -9,7 +9,11 @@ import wpilib.drive
 from networktables import NetworkTables
 import wpilib.interfaces as wi
 
-
+import os
+if os.uname().machine == 'armv71':
+    import ctre
+else:
+    print("Warning: ctre library not imported (ctre only supported on the RoboRIO)")
 
 class MyRobot(wpilib.TimedRobot):
     def robotInit(self):
@@ -147,38 +151,38 @@ class MyRobot(wpilib.TimedRobot):
         #####HOOD#####
 
         #If the hood is moving, we need to update its position
-        if self.hoodDirection == 'forward':
-            self.currentHoodPos += self.hoodSpeed*self.hoodTimer.get()
-        elif self.hoodDirection == 'backward':
-            self.currentHoodPos -= self.hoodSpeed*self.hoodTimer.get()
-        self.hoodTimer.reset()
+        # if self.hoodDirection == 'forward':
+        #     self.currentHoodPos += self.hoodSpeed*self.hoodTimer.get()
+        # elif self.hoodDirection == 'backward':
+        #     self.currentHoodPos -= self.hoodSpeed*self.hoodTimer.get()
+        # self.hoodTimer.reset()
 
 
-        if hoodState == 'on' or hoodState == 'auto':
-            if self.hoodOn == False:
-                if self.hoodSwitch.get() == False:
-                    self.hoodDirection = 'backward'
-                    self.hoodMotor.set(-self.hoodSpeed)
-            else:
-                if self.currentHoodPos < hoodPosition-self.hoodSlop:
-                    #drive the hood forward
-                    self.hoodDirection = 'forward'
-                    self.hoodMotor.set(self.hoodSpeed)
-                elif self.currentHoodPos > hoodPosition+self.hoodSlop:
-                    #drive the hood forward
-                    self.hoodDirection = 'backward'
-                    self.hoodMotor.set(-self.hoodSpeed)
-                else:
-                    self.hoodDirection = 'stopped'
-                    self.hoodMotor.set(0)
-        else:
-            self.hoodMotor.set(0)
+        # if hoodState == 'on' or hoodState == 'auto':
+        #     if self.hoodOn == False:
+        #         if self.hoodSwitch.get() == False:
+        #             self.hoodDirection = 'backward'
+        #             self.hoodMotor.set(-self.hoodSpeed)
+        #     else:
+        #         if self.currentHoodPos < hoodPosition-self.hoodSlop:
+        #             #drive the hood forward
+        #             self.hoodDirection = 'forward'
+        #             self.hoodMotor.set(self.hoodSpeed)
+        #         elif self.currentHoodPos > hoodPosition+self.hoodSlop:
+        #             #drive the hood forward
+        #             self.hoodDirection = 'backward'
+        #             self.hoodMotor.set(-self.hoodSpeed)
+        #         else:
+        #             self.hoodDirection = 'stopped'
+        #             self.hoodMotor.set(0)
+        # else:
+        #     self.hoodMotor.set(0)
 
-        #last, take care of a limit switch
-        if self.hoodSwitch.get():
-            #means the switch is pressed
-            self.hoodDirection = 'stopped'
-            self.currentHoodPos = 0
+        # #last, take care of a limit switch
+        # if self.hoodSwitch.get():
+        #     #means the switch is pressed
+        #     self.hoodDirection = 'stopped'
+        #     self.currentHoodPos = 0
 
             
 
@@ -242,11 +246,11 @@ class MyRobot(wpilib.TimedRobot):
 
         if self.joystick.getBumper(wi.GenericHID.Hand.kRightHand):
             if climbState == 'normal':
-                self.rightClimb.set(climbScale)
+                self.hoodMotor.set(climbScale)
             if climbState == 'retract':
-                self.rightClimb.set(-climbScale)
+                self.hoodMotor.set(-climbScale)
         else:
-            self.rightClimb.set(0)
+            self.hoodMotor.set(0)
         
 
 
