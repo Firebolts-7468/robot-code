@@ -1,4 +1,4 @@
 tasks:
-  - init: make
+  - init: pip3 install -r requirements.txt
 image:
   file: .gitpod.Dockerfile
