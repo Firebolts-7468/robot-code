@@ -118,6 +118,7 @@ class MyRobot(wpilib.TimedRobot):
 
         self.shooterHoodCAN = ctre.TalonFX(5)
         self.initTalonFX(self.shooterHoodCAN)
+        
         #self.initTalonFX(self.shooterHoodCAN, kF=0, kP=0.02, kI=0, inverted=True, enCurrentLimit=True)
         #self.shooterHoodCAN.setSelectedSensorPosition(0, 0, 10)
 
@@ -171,9 +172,9 @@ class MyRobot(wpilib.TimedRobot):
 
         self.hoodDirection = 'stopped'  #stopped, forward, backward
         self.currentHoodPos = 0
-        self.hoodSlop = .5
+        self.hoodSlop = 0.005
         self.zeroHood = False
-        self.hoodSpeed = .05
+        self.hoodSpeed = .06
 
         self.hoodCtsPerRot = 2048 * 70.0 # counts per rotation * gear reduction / quadrature?
 
@@ -260,6 +261,7 @@ class MyRobot(wpilib.TimedRobot):
             self.drive.curvatureDrive(yvalue*yScale, (-leftTrigger+rightTrigger)*spinScale+steeringTrim, True)
         #Use the A button to spin the robot to look at the target
         elif self.joystick.getAButton():
+            self.hoodOn = True
             if limeTx>5: limeTx=5
             if limeTx<-5: limeTx=-5
             self.drive.curvatureDrive(0, limeTx*visionP, True)
@@ -272,39 +274,43 @@ class MyRobot(wpilib.TimedRobot):
 
         #####HOOD#####
 
-        #If the hood is moving, we need to update its position
-        # if self.hoodDirection == 'forward':
-        #     self.currentHoodPos += self.hoodSpeed*self.hoodTimer.get()
-        # elif self.hoodDirection == 'backward':
-        #     self.currentHoodPos -= self.hoodSpeed*self.hoodTimer.get()
-        # self.hoodTimer.reset()
+       # If the hood is moving, we need to update its position
+        if self.hoodDirection == 'forward':
+            self.currentHoodPos += self.hoodSpeed*self.hoodTimer.get()
+        elif self.hoodDirection == 'backward':
+            self.currentHoodPos -= self.hoodSpeed*self.hoodTimer.get()
+        self.hoodTimer.reset()
 
 
-        # if hoodState == 'on' or hoodState == 'auto':
-        #     if self.hoodOn == False:
-        #         if self.hoodSwitch.get() == False:
-        #             self.hoodDirection = 'backward'
-        #             self.hoodMotor.set(-self.hoodSpeed)
-        #     else:
-        #         if self.currentHoodPos < hoodPosition-self.hoodSlop:
-        #             #drive the hood forward
-        #             self.hoodDirection = 'forward'
-        #             self.hoodMotor.set(self.hoodSpeed)
-        #         elif self.currentHoodPos > hoodPosition+self.hoodSlop:
-        #             #drive the hood forward
-        #             self.hoodDirection = 'backward'
-        #             self.hoodMotor.set(-self.hoodSpeed)
-        #         else:
-        #             self.hoodDirection = 'stopped'
-        #             self.hoodMotor.set(0)
-        # else:
-        #     self.hoodMotor.set(0)
+        if hoodState == 'on' or hoodState == 'auto':
+            if self.hoodOn == False:
+                    self.hoodDirection = 'backward'
+                    self.currentHoodPos = 0
+                    self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=-self.hoodSpeed)
+            else:
+                if self.currentHoodPos < hoodPosition-self.hoodSlop:
+                    #drive the hood forward
+                    self.hoodDirection = 'forward'
+                    self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=self.hoodSpeed)
+                elif self.currentHoodPos > hoodPosition+self.hoodSlop:
+                    #drive the hood forward
+                    self.hoodDirection = 'backward'
+                    self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=-self.hoodSpeed)
+                else:
+                    self.hoodDirection = 'stopped'
+                    self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
+        else:
+            self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
+            self.hoodDirection = 'stopped'
 
-        # #last, take care of a limit switch
-        # if self.hoodSwitch.get():
-        #     #means the switch is pressed
-        #     self.hoodDirection = 'stopped'
-        #     self.currentHoodPos = 0
+        if self.cycleCount%70==0:
+            print("Position: "+str(self.currentHoodPos)+
+                  "  hood on: "+str(self.hoodOn)+
+                  "  State: "+str(hoodState)+
+                  "  Target: "+str(hoodPosition)+
+                  "  direction: "+str(self.hoodDirection)
+            )
+
 
             
 
@@ -321,7 +327,7 @@ class MyRobot(wpilib.TimedRobot):
             if not self.shooterOn:
                 self.shooterOn = True
                 self.shooterTimer.reset()
-                #self.hoodOn = True
+                
             else:
                 self.indexerOn = True
                 self.indexerTimer.reset()
@@ -355,7 +361,7 @@ class MyRobot(wpilib.TimedRobot):
             self.indexerMotorCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
 
         if shooterState == "on" or (shooterState == "controller" and self.shooterOn) or (shooterState == "auto" and self.shooterOn): 
-            if self.shooterTimer.get()>4:
+            if self.shooterTimer.get()>3:
                 self.shooterCAN.set(mode=ctre.ControlMode.PercentOutput, value=shooterSpeed)
             elif self.shooterTimer.get()>2:
                 self.shooterCAN.set(mode=ctre.ControlMode.PercentOutput, value=shooterSpeed*.5)
@@ -387,12 +393,13 @@ class MyRobot(wpilib.TimedRobot):
         #     self.rightClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
      
 
-        if self.joystick.getBumper(wi.GenericHID.Hand.kLeftHand):
-            self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=hoodSpeed*.1)
-        elif self.joystick.getBumper(wi.GenericHID.Hand.kRightHand):
-            self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=-hoodSpeed*.1)
-        else:
-            self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
+        # if self.joystick.getBumper(wi.GenericHID.Hand.kLeftHand):
+        #     self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=hoodPosition*.1)
+        # elif self.joystick.getBumper(wi.GenericHID.Hand.kRightHand):
+        #     self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=-hoodPosition*.1)
+        #     print(str(hoodPosition*.1))
+        # else:
+        #     self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
 
        
 
