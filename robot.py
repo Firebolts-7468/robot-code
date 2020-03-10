@@ -117,8 +117,9 @@ class MyRobot(wpilib.TimedRobot):
 
 
         self.shooterHoodCAN = ctre.TalonFX(5)
-        self.initTalonFX(self.shooterHoodCAN, kF=0, kP=0.02, kI=0, inverted=True, enCurrentLimit=True)
-        self.shooterHoodCAN.setSelectedSensorPosition(0, 0, 10)
+        self.initTalonFX(self.shooterHoodCAN)
+        #self.initTalonFX(self.shooterHoodCAN, kF=0, kP=0.02, kI=0, inverted=True, enCurrentLimit=True)
+        #self.shooterHoodCAN.setSelectedSensorPosition(0, 0, 10)
 
 
 
@@ -155,7 +156,7 @@ class MyRobot(wpilib.TimedRobot):
         self.rightClimbCAN = ctre.VictorSPX(14)
 
         
-        self.hoodSwitch = wpilib.DigitalInput(0)
+    
 
 
         #Set up the drivetrain motors. 
@@ -172,7 +173,7 @@ class MyRobot(wpilib.TimedRobot):
         self.currentHoodPos = 0
         self.hoodSlop = .5
         self.zeroHood = False
-        self.hoodSpeed = .1
+        self.hoodSpeed = .05
 
         self.hoodCtsPerRot = 2048 * 70.0 # counts per rotation * gear reduction / quadrature?
 
@@ -369,22 +370,31 @@ class MyRobot(wpilib.TimedRobot):
 
         #####CLIMB######
 
-        if self.joystick.getBumper(wi.GenericHID.Hand.kLeftHand):
-            if climbState == 'normal':
-                self.leftClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=climbScale)
-            if climbState == 'retract':
-                self.leftClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=-climbScale)
-        else:
-            self.leftClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
+        # if self.joystick.getBumper(wi.GenericHID.Hand.kLeftHand):
+        #     if climbState == 'normal':
+        #         self.leftClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=climbScale)
+        #     if climbState == 'retract':
+        #         self.leftClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=-climbScale)
+        # else:
+        #     self.leftClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
 
-        if self.joystick.getBumper(wi.GenericHID.Hand.kRightHand):
-            if climbState == 'normal':
-                self.rightClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=climbScale)
-            if climbState == 'retract':
-                self.rightClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=-climbScale)
+        # if self.joystick.getBumper(wi.GenericHID.Hand.kRightHand):
+        #     if climbState == 'normal':
+        #         self.rightClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=climbScale)
+        #     if climbState == 'retract':
+        #         self.rightClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=-climbScale)
+        # else:
+        #     self.rightClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
+     
+
+        if self.joystick.getBumper(wi.GenericHID.Hand.kLeftHand):
+            self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=hoodSpeed*.1)
+        elif self.joystick.getBumper(wi.GenericHID.Hand.kRightHand):
+            self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=-hoodSpeed*.1)
         else:
-            self.rightClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
-        
+            self.shooterHoodCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
+
+       
 
 
         #self.drive.arcadeDrive(yvalue/joystickYScale, xvalue/joystickXScale, squareInputs=True)
