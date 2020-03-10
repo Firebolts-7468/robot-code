@@ -42,9 +42,9 @@ class MyRobot(wpilib.TimedRobot):
         # /* Config sensor used for Primary PID [Velocity] */
         talon.configSelectedFeedbackSensor(ctre.TalonFXFeedbackDevice.IntegratedSensor, 0, 10)
 
-        talon.setSensorPhase(inverted)
+        #talon.setSensorPhase(inverted)
 
-        talon.setInverted(False)
+        talon.setInverted(inverted)
 
         # /* Config the peak and nominal outputs */
         talon.configNominalOutputForward(0, 10)
@@ -68,8 +68,8 @@ class MyRobot(wpilib.TimedRobot):
           *
           *  enabled | Limit(amp) | Trigger Threshold(amp) | Trigger Threshold Time(s)  */
         '''
-        talon.configStatorCurrentLimit(ctre.StatorCurrentLimitConfiguration(enCurrentLimit, statorCurrentLimit, statorCurrentLimit*1.5, 0.05))
-        talon.configSupplyCurrentLimit(ctre.SupplyCurrentLimitConfiguration(enCurrentLimit, supplyCurrentLimit, supplyCurrentLimit*1.5, 0.05))
+        #talon.configStatorCurrentLimit(ctre.StatorCurrentLimitConfiguration(enCurrentLimit, statorCurrentLimit, statorCurrentLimit*1.5, 0.05))
+        #talon.configSupplyCurrentLimit(ctre.SupplyCurrentLimitConfiguration(enCurrentLimit, supplyCurrentLimit, supplyCurrentLimit*1.5, 0.05))
 
     def setShooterHoodPos(self, pos):
         # pos 0 - 1
@@ -107,39 +107,60 @@ class MyRobot(wpilib.TimedRobot):
             Look into limit switches for motor auto-shutoff
         '''
 
-        self.shooterCAN = ctre.TalonFX(4)
+        self.shooterCAN = ctre.TalonFX(6)
         self.initTalonFX(self.shooterCAN)
+
+        self.shooterCANfollow = ctre.TalonFX(1)
+        self.initTalonFX(self.shooterCANfollow, inverted=True)
+        self.shooterCANfollow.set(mode=ctre.ControlMode.Follower, value=6)
+
+
 
         self.shooterHoodCAN = ctre.TalonFX(5)
         self.initTalonFX(self.shooterHoodCAN, kF=0, kP=0.02, kI=0, inverted=True, enCurrentLimit=True)
         self.shooterHoodCAN.setSelectedSensorPosition(0, 0, 10)
+
+
+
+
 
         #Get information from network tables
         NetworkTables.initialize()
         self.sd = NetworkTables.getTable("SmartDashboard")
         self.lime = NetworkTables.getTable("limelight")
 
+
+
+
+
+
         #Set up all the motor controllers 
-        self.leftMotors = wpilib.Talon(0)
-        #self.rearLeft = wpilib.Talon(3)
-        #self.left = wpilib.SpeedControllerGroup(self.frontLeft, self.rearLeft)
-        self.rightMotors = wpilib.Talon(1)
-        #self.rearRight = wpilib.Talon(1)
-        #self.right = wpilib.SpeedControllerGroup(self.frontRight, self.rearRight)
-        self.shooterMotor = wpilib.Talon(4)
-        self.indexerMotor = wpilib.Talon(5)
-        self.intakeMotor = wpilib.Talon(6)
+        self.leftDriveCAN = ctre.WPI_TalonFX(13)
+        # self.initTalonFX(self.leftDriveCAN)
+        self.leftDriveCANfollow = ctre.TalonFX(12)
+        # self.initTalonFX(self.leftDriveCANfollow)
+        self.leftDriveCANfollow.set(mode=ctre.ControlMode.Follower, value=13)
 
-        self.leftClimb = wpilib.Talon(7)
-        self.rightClimb = wpilib.Talon(8)
+        self.rightDriveCAN = ctre.WPI_TalonFX(11)
+        # self.initTalonFX(self.rightDriveCAN)
+        self.rightDriveCANfollow = ctre.TalonFX(10)
+        # self.initTalonFX(self.rightDriveCANfollow)
+        self.rightDriveCANfollow.set(mode=ctre.ControlMode.Follower, value=11)
+        
 
-        self.hoodMotor = wpilib.Talon(9)
+        self.indexerMotorCAN = ctre.VictorSPX(9)
+        self.intakeMotorCAN = ctre.VictorSPX(8)
+
+        self.leftClimbCAN = ctre.VictorSPX(15)
+        self.rightClimbCAN = ctre.VictorSPX(14)
+
+        
         self.hoodSwitch = wpilib.DigitalInput(0)
 
 
         #Set up the drivetrain motors. 
-        self.drive = wpilib.drive.DifferentialDrive(self.leftMotors, self.rightMotors)
-        #self.shooterMotor1.setInverted(True)
+        self.drive = wpilib.drive.DifferentialDrive(self.leftDriveCAN, self.rightDriveCAN)
+    
         self.intakeOn = False
         self.indexerOn = False
         self.shooterOn = False
@@ -160,6 +181,9 @@ class MyRobot(wpilib.TimedRobot):
         self.indexerTimer = wpilib.Timer()
         self.indexerTimer.start()
 
+        self.shooterTimer = wpilib.Timer()
+        self.shooterTimer.start()
+
         self.hoodTimer = wpilib.Timer()
         self.hoodTimer.start()
 
@@ -178,10 +202,10 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def teleopPeriodic(self):
-        # self.shooterCAN.set(mode=ctre.ControlMode.Velocity, value=1000)
-        self.setShooterHoodPos(0.5)
-        print("err: %s" % self.shooterHoodCAN.getClosedLoopError(0))
-        print("pos: %s" % self.shooterHoodCAN.getSelectedSensorPosition(0))
+        
+        #self.setShooterHoodPos(0.5)
+        #print("err: %s" % self.shooterHoodCAN.getClosedLoopError(0))
+        #print("pos: %s" % self.shooterHoodCAN.getSelectedSensorPosition(0))
 
         self.cycleCount+=1
         #first, let's get some inofrmation from our control station, we default to not moving
@@ -217,7 +241,7 @@ class MyRobot(wpilib.TimedRobot):
 
 
         #get values from joystick
-        yvalue =  -self.joystick.getY(wi.GenericHID.Hand.kLeftHand)
+        yvalue =  self.joystick.getY(wi.GenericHID.Hand.kLeftHand)
         xvalue =  self.joystick.getX(wi.GenericHID.Hand.kRightHand)
         leftTrigger = self.joystick.getTriggerAxis(wi.GenericHID.Hand.kLeftHand)
         rightTrigger = self.joystick.getTriggerAxis(wi.GenericHID.Hand.kRightHand)
@@ -295,16 +319,20 @@ class MyRobot(wpilib.TimedRobot):
         if self.joystick.getXButtonPressed():
             if not self.shooterOn:
                 self.shooterOn = True
-                self.hoodOn = True
+                self.shooterTimer.reset()
+                #self.hoodOn = True
             else:
                 self.indexerOn = True
                 self.indexerTimer.reset()
+
+    
 
         if self.indexerOn and self.indexerTimer.hasPeriodPassed(1):
             self.indexerOn = False
 
         #toggle shooter on and off
-        if self.joystick.getBButtonPressed():
+        #if self.joystick.getBButtonPressed():
+        if self.joystick.getBButton():
             #turn off shooter
             self.shooterOn = False
             #return hood
@@ -316,38 +344,46 @@ class MyRobot(wpilib.TimedRobot):
 
         #based on input from control panel, and from joystick, turn stuff on and off
         if intakeState == "on" or (intakeState == "controller" and self.intakeOn): 
-            self.intakeMotor.set(intakeSpeed)
+            self.intakeMotorCAN.set(mode=ctre.ControlMode.PercentOutput, value=intakeSpeed)
         else:
-            self.intakeMotor.set(0)
+            self.intakeMotorCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
 
         if indexerState == "on" or (indexerState == "controller" and self.indexerOn): 
-            self.indexerMotor.set(indexerSpeed)
+            self.indexerMotorCAN.set(mode=ctre.ControlMode.PercentOutput, value=indexerSpeed)
         else:
-            self.indexerMotor.set(0)
+            self.indexerMotorCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
 
         if shooterState == "on" or (shooterState == "controller" and self.shooterOn) or (shooterState == "auto" and self.shooterOn): 
-            self.shooterMotor.set(shooterSpeed)
+            if self.shooterTimer.get()>4:
+                self.shooterCAN.set(mode=ctre.ControlMode.PercentOutput, value=shooterSpeed)
+            elif self.shooterTimer.get()>2:
+                self.shooterCAN.set(mode=ctre.ControlMode.PercentOutput, value=shooterSpeed*.5)
+            elif self.shooterTimer.get()>1:
+                self.shooterCAN.set(mode=ctre.ControlMode.PercentOutput, value=shooterSpeed*.25)
+            else:
+                self.shooterCAN.set(mode=ctre.ControlMode.PercentOutput, value=shooterSpeed*.1)
+
         else:
-            self.shooterMotor.set(0)
+            self.shooterCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
 
 
         #####CLIMB######
 
         if self.joystick.getBumper(wi.GenericHID.Hand.kLeftHand):
             if climbState == 'normal':
-                self.leftClimb.set(climbScale)
+                self.leftClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=climbScale)
             if climbState == 'retract':
-                self.leftClimb.set(-climbScale)
+                self.leftClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=-climbScale)
         else:
-            self.leftClimb.set(0)
+            self.leftClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
 
         if self.joystick.getBumper(wi.GenericHID.Hand.kRightHand):
             if climbState == 'normal':
-                self.hoodMotor.set(climbScale)
+                self.rightClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=climbScale)
             if climbState == 'retract':
-                self.hoodMotor.set(-climbScale)
+                self.rightClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=-climbScale)
         else:
-            self.hoodMotor.set(0)
+            self.rightClimbCAN.set(mode=ctre.ControlMode.PercentOutput, value=0)
         
 
 
@@ -372,9 +408,9 @@ class MyRobot(wpilib.TimedRobot):
 
         # btvalue = self.joystick.getAButton()
         # if btvalue == True:
-        #     self.indexerMotor.set(0.3)
+        #     self.indexerMotorCAN.set(0.3)
         # else:
-        #     self.indexerMotor.set(0)
+        #     self.indexerMotorCAN.set(0)
 
 
             # set up left and right bumpers; leftbumper= negative rightbumper= positve 
