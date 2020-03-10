@@ -296,8 +296,8 @@ $(document).ready(function(){
 
     $( "#hood-slider" ).slider({
         min: 0,
-        max: 1,
-        step: .01,
+        max: .125,
+        step: .001,
         value: 0,
         change: function( event, ui ) {
             console.log('see hood: '+ui.value)
