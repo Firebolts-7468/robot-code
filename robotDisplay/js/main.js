@@ -1,9 +1,11 @@
 //to run this use 
 // python3 -m pynetworktables2js --team 7468
-
+ 
 var defaultOnce = true;
 var shooterState = '';
 var hoodState = '';
+
+var addr = '';
 
 function onRobotConnection(connected) {
     $('#robotstate').text(connected ? "Connected!" : "Disconnected");
@@ -11,7 +13,10 @@ function onRobotConnection(connected) {
     if(connected && defaultOnce){
         $( "#load-defaults" ).click();
         defaultOnce = false;
+        console.log('address')
+        console.log(NetworkTables.getRobotAddress())
     }
+
    
 }
 
@@ -79,15 +84,6 @@ function getShooterSettings(ty) {
 }
 
 
-function onRobotConnection(connected) {
-    $('#robotstate').text(connected ? "Connected!" : "Disconnected");
-    $('#robotAddress').text(connected ? NetworkTables.getRobotAddress() : "disconnected");
-    if(connected && defaultOnce){
-        $( "#load-defaults" ).click();
-        defaultOnce = false;
-    }
-   
-}
 
 var lastReceive = {'limeTY':Date.now()};
 
